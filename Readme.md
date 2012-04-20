@@ -26,5 +26,11 @@ a project folder:
     npm run demo-extract
     ```
 
+2. Extraction and analyzes of requirements
+
+   ```sh
+   npm run demo-analyze
+   ```
+
 [JEP Linker]:https://github.com/mozilla/addon-sdk/wiki/JEP-Linker
 [nodejs]:http://nodejs.org/

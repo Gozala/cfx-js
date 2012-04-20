@@ -19,11 +19,12 @@
     "swank-js": ">=0.0.1"
   },
   "scripts": {
-    "test": "node tests/test-all.js",
-    "repl": "node node_modules/repl-utils",
-    "swank": "node node_modules/swank-js",
+    "test": "node --harmony_weakmaps tests/test-all.js",
+    "repl": "node --harmony_weakmaps node_modules/repl-utils",
+    "swank": "node --harmony_weakmaps node_modules/swank-js",
 
-    "demo-extract": "node ./bin/cfx.js extract ./main.js ./tests/fixtures/a"
+    "demo-extract": "node ./bin/cfx.js extract ./main.js ./tests/fixtures/a",
+    "demo-analyze": "node ./bin/cfx.js analyze ./main.js ./tests/fixtures/a"
   },
   "licenses": [{
     "type" : "MPL2",

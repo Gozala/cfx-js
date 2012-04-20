@@ -24,5 +24,20 @@ exports['test extract requirements'] = function(expect, complete) {
     then(complete);
 };
 
+exports['test analyze requirements'] = function(expect, complete) {
+  var root = fixtures.resolve('a');
+  var requirer = './main.js';
+  var requirements = linker.analyze('./main.js', root);
+
+  expect(requirements).to.be(
+    { root: root, requirer: requirer, requirement: './utils', type: 'local' },
+    { root: root, requirer: requirer, requirement: '@panel',  type: 'system' },
+    { root: root, requirer: requirer, requirement: '@devtools/scratchpad', type: 'system' },
+    { root: root, requirer: requirer, requirement: 'fs', type: 'external' },
+    { root: root, requirer: requirer, requirement: 'tabs', type: 'external' },
+    { root: root, requirer: requirer, requirement: 'foo/bar', type: 'external' }
+  ).then(complete);
+};
+
 if (module == require.main)
   require('test').run(exports);
