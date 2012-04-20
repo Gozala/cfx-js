@@ -8,6 +8,7 @@
 var streamer = require('streamer/core'), Stream = streamer.Stream;
 var fs = require('fs-streamer/fs');
 var path = require('path');
+var env = require('environment').env;
 
 function extract(requirer, path) {
   /**
@@ -26,7 +27,7 @@ exports.extract = extract;
 extract.parse = new function() {
   var COMMENT_PATTERN = /(\/\*[\s\S]*?\*\/)|((^|\n)[^('|"|\n)]*\/\/[^\n]*)/g;
   var REQUIRE_PATTERN = /require\s*\(['"]([\w\W]*?)['"]\s*\)/g;
-  
+
   return function parse(source) {
     /**
     Takes file source and extracts all requirement names that are
@@ -76,22 +77,69 @@ function analyze(requirer, path) {
 }
 exports.analyze = analyze;
 
-analyze.annotate = function annotate(record) {
+analyze.annotate = function annotate(node) {
   /**
   Function takes module requirement and adds a type annotation to it,
   which is either 'system', 'local' or 'external'.
   */
-  var requirement = record.requirement[0];
+  var requirement = node.requirement[0];
   var type = requirement[0] === '.' ? 'local' :
              requirement[0] === '@' ? 'system' :
              'external';
-
-  return {
-    root: record.root,
-    requirer: record.requirer,
-    requirement: record.requirement,
-    type: type
-  };
+  node.type = type;
+  return node;
 };
 
+function locate(requirements) {
+  var local = streamer.filter(function(requirement) {
+    return requirement.type === 'local';
+  }, requirements);
+  var system = streamer.filter(function(requirement) {
+    return requirement.type === 'system';
+  }, requirements);
+  var external = streamer.filter(function(requirement) {
+    return requirement.type === 'external';
+  }, requirements);
 
+  return streamer.mix.all(
+    streamer.flatten(streamer.map(locate.local, local)),
+    system, 
+    streamer.flatten(streamer.map(locate.external, external)));
+}
+exports.locate = locate;
+
+locate.node = function locate(path, node) {
+  // If stream contained error, than we failed to stat it.
+  // In that case we mark node as not found, otherwise we mark it
+  // as found.
+  var stat = fs.stat(path);
+  var located = streamer.map(function() {
+    node.located = true;
+    return node;
+  }, stat);
+  return streamer.capture(function() {
+    node.located = false;
+    return node;
+  }, located);
+};
+
+locate.local = function local(node) {
+  var base = path.dirname(node.requirer);
+  node.path = local.normalize(path.join(base, node.requirement));
+  return locate.node(path.join(node.root, node.path), node);
+};
+locate.local.normalize = function(path) {
+  path = path[0] !== '.' ? './' + path : path;
+  path = path.substr(-3) === '.js' ? path : path + '.js';
+  return path;
+};
+
+locate.external = function external(node) {
+  var base = path.join(node.root, './@modules/');
+  node.path = locate.local.normalize(node.requirement);
+  return locate.node(path.join(base, node.path), node);
+};
+
+locate.system = function locate(node) {
+  return node;
+};

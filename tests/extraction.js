@@ -39,5 +39,20 @@ exports['test analyze requirements'] = function(expect, complete) {
   ).then(complete);
 };
 
+exports['test locate requirements'] = function(expect, complete) {
+  var root = fixtures.resolve('a');
+  var requirer = './main.js';
+  var requirements = linker.locate(linker.analyze('./main.js', root));
+
+  expect(requirements).to.be(
+    { root: root, requirer: requirer, requirement: '@panel',  type: 'system' },
+    { root: root, requirer: requirer, requirement: '@devtools/scratchpad', type: 'system' },
+    { root: root, requirer: requirer, requirement: './utils', type: 'local', path: './utils.js', located: true },
+    { root: root, requirer: requirer, requirement: 'fs', type: 'external', path: './fs.js', located: true },
+    { root: root, requirer: requirer, requirement: 'tabs', type: 'external', path: './tabs.js', located: true },
+    { root: root, requirer: requirer, requirement: 'foo/bar', type: 'external', path: './foo/bar.js', located: true }
+  ).then(complete);
+};
+
 if (module == require.main)
   require('test').run(exports);
