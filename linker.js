@@ -21,17 +21,93 @@ function field(name) {
   };
 }
 
-function extract(requirer, path) {
+function join(a, b) {
+  var descriptor = {};
+  var names = Object.getOwnPropertyNames(a).concat(Object.getOwnPropertyNames(b));
+  names.forEach(function(name) {
+    descriptor[name] = Object.getOwnPropertyDescriptor(b, name) ||
+      Object.getOwnPropertyDescriptor(a, name);
+  });
+  return Object.create(Object.prototype, descriptor);
+}
+
+function isLocal(requirement) { return requirement[0] === '.'; }
+
+function relativify(path) {
+  return path[0] !== '.' ? './' + path : path;
+}
+
+function idify(path) {
+  return path.substr(-3) === '.js' ? path.substr(0, path.length - 3) : path;
+}
+
+function normalize(path) {
+  return relativify(path.substr(-3) === '.js' ? path : path + '.js');
+}
+
+function exists(path) {
+  /**
+  Utility function to test weather file under given path exists
+  or not. Returns stream with one item which is either `true` or
+  `false`
+  **/
+  var stat = fs.stat(path);
+  var located = streamer.map(function() { return true; }, stat);
+  return streamer.capture(function() { return Stream.of(false); }, located);
+}
+
+function tree(isBranch, getNodes, root) {
+  /**
+  Utility function that takes `isBranch`, `getNodes`, functions and
+  `root` node data structure and returns object that can be walked
+  as a tree via `reduce` method.
+  **/
+
+  return {
+    reduce: function(f, start) {
+      var result = f(start, root);
+      result = isBranch(root) ? getNodes(root).reduce(function(result, node) {
+        return tree(isBranch, getNodes, node).reduce(f, result);
+      }, result) : result;
+      return result;
+    }
+  };
+}
+
+function existing(paths) {
+  /**
+  Reduces given stream of `paths` to an existing subset. Returned stream is
+  lazy, meaning that IO operations are performed at consumption, so that if
+  you stop on first match only operations for up to first match will be
+  performed.
+  **/
+
+  // create lazy stream of booleans, expressing weather path exists or not.
+  var existances = streamer.flatten(streamer.map(exists, paths));
+  // create lazy stream of [ path, exists ] pairs.
+  var entries = streamer.zip(existances, paths);
+  // filter [ path, exists ] pairs only to ones which exists (exists is true).
+  var located = streamer.filter(field(0), entries);
+  // map pairs back to paths.
+  return streamer.map(field(1), located);
+}
+exports.existing = existing;
+
+
+function extract(requirer) {
   /**
   Returns stream of requirement records for the given `requirer` in
   the given `path`.
   **/
-  var requirements = streamer.zip.all(
-    extract.read(requirer, path),
-    streamer.repeat(requirer),
-    streamer.repeat(path));
 
-  return streamer.map(extract.record, requirements);
+  var requirements = extract.read(requirer);
+  return streamer.map(function(requirement) {
+    return {
+      root: requirer.root,
+      requirement: requirement,
+      requirer: requirer.id
+    };
+  }, requirements);
 }
 exports.extract = extract;
 
@@ -53,153 +129,138 @@ extract.parse = new function() {
   };
 };
 
-extract.read = function read(requirer, root) {
+extract.read = function read(requirement) {
   /**
   Function takes module file path and returns stream of it's
   requirements in form of strings.
   **/
 
+  var file = normalize(requirement.id);
+  var location = path.resolve(requirement.root, file);
   // Read file from the given path.
-  var source = fs.read(path.resolve(root || '.', requirer));
+
+  var source = fs.read(location);
   // Map file source to a stream of array of dependency names.
   var names = streamer.map(extract.parse, source);
   // Map arrays to streams and flatten container stream.
   return streamer.flatten(streamer.map(Stream.from, names));
 };
 
-extract.record = function record(tuple) {
-  /**
-   * Creates a record with 'root', 'requirer' and 'requirement' representing
-   * a requirement record.
-   */
-  return {
-    root: tuple.pop(),
-    requirer: tuple.pop(),
-    requirement: tuple.pop()
-  };
-};
-
-function analyze(requirer, path) {
+function analyze(requirements) {
   /**
   Function takes module requirements stream and returns stream of same
   requirements but with require type annotations.
   **/
-  return streamer.map(analyze.annotate, extract(requirer, path));
+  return streamer.map(analyze.annotate, requirements);
 }
 exports.analyze = analyze;
+
+function identify(requirements) {
+  return streamer.map(function(requirement) {
+    var type = requirement.type;
+    var name = requirement.requirement;
+    var requirer = requirement.requirer;
+    var root = requirement.root;
+    var id = type === 'std' ? name :
+             type === 'system' ? name :
+             type === 'local' ? relativify(path.join(path.dirname(requirer), name)) :
+             type === 'external' ? idify(requirement.path) :
+             null;
+
+    return join(requirement, { id: id });
+  }, requirements);
+}
+exports.identify = identify;
 
 analyze.annotate = function annotate(node) {
   /**
   Function takes module requirement and adds a type annotation to it,
   which is either 'system', 'local' or 'external'.
   */
-  var requirement = node.requirement[0];
-  var type = requirement[0] === '.' ? 'local' : 'unknown';
-  node.type = type;
-  return node;
+  return join(node, { type: isLocal(node.requirement) ? 'local' : 'unknown' });
 };
 
-function locate(requirements) {
+function locate(requirements, requirer) {
   var local = streamer.filter(function(requirement) {
     return requirement.type === 'local';
   }, requirements);
+
   var unknown = streamer.filter(function(requirement) {
     return requirement.type === 'unknown';
   }, requirements);
 
-  return streamer.mix.all(
+  return streamer.mix(
     streamer.flatten(streamer.map(locate.local, local)),
-    system, 
-    streamer.flatten(streamer.map(locate.external, external)));
+    streamer.flatten(streamer.map(locate.unknown, unknown))
+  );
 }
 exports.locate = locate;
 
-function exists(path) {
+locate.local = function local(requirement) {
   /**
-  Utility function to test weather file under given path exists
-  or not. Returns stream with one item which is either `true` or
-  `false`
+  Takes `local` type requirement and locates it on the file system, returning
+  a stream of single `requirement` containing `path` property for the given
+  requirement.
   **/
-  var stat = fs.stat(path);
-  var located = streamer.map(function() { return true; }, stat);
-  return streamer.capture(function() { return Stream.of(false); }, located);
-}
 
-locate.node = function locate(path, node) {
-  // If stream contained error, than we failed to stat it.
-  // In that case we mark node as not found, otherwise we mark it
-  // as found.
-  return streamer.map(function(exists) {
-    node.located = exists;
-    return node;
-  }, exists(path));
-};
+  // Resolve base directory of the requirer.
+  var base = path.dirname(path.join(requirement.root, requirement.requirer));
+  // Resolve file path where requirement must be located.
+  var file = path.join(base, normalize(requirement.requirement));
+  // Get a stream of verified file paths, in this case it's either stream
+  // of single item `file` or empty. Later would mean that file was not found.
+  var paths = existing(Stream.of(file));
+  // We refine `requirement` with a `path` information.
+  var refined = streamer.map(function(path) {
+    return join(requirement, { path: path });
+  }, paths);
+  // We append broken requirement node to the end of the refined
+  // stream, this way if it's empty broken node will be the first in
+  // the result. Otherwise it will be ignored as we only care about
+  // a first match.
+  var result = streamer.append(refined, Stream.of(join(requirement, {
+    path: file,
+    error: 'Module :' + requirement +
+      ' required by module :' + requirement.requirer +
+      ' could not be located at :' + file
+  })));
 
-locate.local = function local(node) {
-  var base = path.dirname(node.requirer);
-  node.path = local.normalize(path.join(base, node.requirement));
-  return locate.node(path.join(node.root, node.path), node);
-};
-locate.local.normalize = function(path) {
-  path = path[0] !== '.' ? './' + path : path;
-  path = path.substr(-3) === '.js' ? path : path + '.js';
-  return path;
-};
-
-locate.external = function external(node) {
-  node.path = locate.local.normalize(node.requirement);
-  var locations = locate.external.find(node.path, node.requirer, node.root);
+  return streamer.take(1, result);
 };
 
-locate.system = function locate(node) {
-  return locate.system.find(node.path, node.requirer, node.root);
-};
-locate.system.lookups = function(from) {
-  return [
-    './lib/',
-    './packages/addon-kit/lib/',
-    './packages/api-utils/lib/'
-  ].map(function(directory) {
-    return path.join(from, directory);
-  });
-};
-locate.system.find = function(requirement, requirer, root) {
-   // create array of lookups directories.
-  var directories = locate.system.lookups(env.JETPACK_PATH);
-  var paths = streamer.map(function(directory) {
-    return path.join(directory, requirement);
-  }, Stream.from(directories));
-  return existing(paths);
-};
-locate.relative = function(node) {
-  return locate.relative.find(node.path, node.requirer, node.root);
-};
-locate.relative.find = function(requirement, requirer, root) {
-  var paths = [
-    path.join(path.dirname(path.join(root, requirer)), requirement)
-  ];
-  return existing(Stream.from(paths));
+locate.unknown = function(requirement) {
+  var external = locate.external(requirement);
+  var std = locate.std(requirement);
+  var deprecated = locate.deprecated(requirement);
+
+  // Append stream of **external** module with **system** one followed
+  // by a **deprecated** search. This way first match will be external
+  // if there is none then system if still none then will fallback
+  // to legacy lookup.
+  var prioritized = streamer.append.all(external, std, deprecated);
+
+  // Append entry for **system**
+  var result = streamer.append(prioritized, Stream.of(join(requirement, {
+    type: 'system'
+  })));
+
+  return streamer.take(1, result);
 };
 
-// Utility function that takes `isBranch`, `getNodes`, functions and
-// `root` node data structure and returns object that can be walked
-// as a tree via `reduce` method.
-function tree(isBranch, getNodes, root) {
-  return {
-    reduce: function(f, start) {
-      var result = f(start, root);
-      result = isBranch(root) ? getNodes(root).reduce(function(result, node) {
-        return tree(isBranch, getNodes, node).reduce(f, result);
-      }, result) : result;
-      return result;
-    }
-  };
-}
+locate.external = function external(requirement) {
+  var paths = locate.external.find(requirement);
 
-locate.external = function(node) {
-  return locate.external.find(node.path, node.requirer, node.root);
+  var result = streamer.map(function(entry) {
+    return join(requirement, {
+      type: 'external',
+      path: relativify(path.relative(requirement.root, entry))
+    });
+  }, paths);
+
+  return result;
 };
 locate.external.lookups = function lookups(from) {
+  var name = env.JETPACK_MODUELS_DIR || '@modules';
   return tree(function isBranch(node) {
     // Is branch if it has `/`
     return !!~node.indexOf('/');
@@ -208,39 +269,96 @@ locate.external.lookups = function lookups(from) {
     // path/to/my/module -> [ path/to/my ]
     return [ branch.substr(0, branch.lastIndexOf('/')) ];
   }, from).reduce(function(paths, node) {
-    paths.push(path.join(node, '@modules'));
+    paths.push(path.join(node, name));
     return paths;
   }, []);
 };
-locate.external.find = function(requirement, requirer, root) {
+locate.external.find = function(requirement) {
+  var root = requirement.root;
+  var base = path.dirname(path.join(root, requirement.requirer));
+  var file = normalize(requirement.requirement);
   // create array of lookups directories.
-  var directories = locate.external.lookups(path.dirname(requirer));
+  var directories = locate.external.lookups(base);
   var paths = streamer.map(function(directory) {
-    return path.join(root, directory, requirement);
+    return path.join(root, directory, file);
   }, Stream.from(directories));
   return existing(paths);
 };
 
+locate.std = function(requirement) {
+  var paths = existing(Stream.from(locate.std.lookups(requirement)));
+  var result = streamer.map(function(value) {
+    return join(requirement, {
+      type: 'std',
+      path: relativify(path.relative(env.JETPACK_PATH, value))
+    });
+  }, paths);
 
-function existing(paths) {
+  return streamer.take(1, result);
+};
+locate.std.lookups = function(requirement) {
+  // Standard library modules are in JETPACK_PATH/lib/
+  return [ path.join(env.JETPACK_PATH, './lib/', normalize(requirement.id)) ];
+};
+
+locate.deprecated = function locate(node) {
+  // So far just return empty
+  return Stream.of();
+};
+locate.deprecated.lookups = function(from) {
+  return [
+    './packages/addon-kit/lib/',
+    './packages/api-utils/lib/'
+  ].map(function(directory) {
+    return path.join(from, directory);
+  });
+};
+locate.deprecated.find = function(requirement, requirer, root) {
+  // create array of lookups directories.
+  var directories = locate.system.lookups(env.JETPACK_PATH);
+  var paths = streamer.map(function(directory) {
+    return path.join(directory, requirement);
+  }, Stream.from(directories));
+  return existing(paths);
+};
+
+function graph(root) {
   /**
-  Reduces given stream of `paths` to an existing subset. Returned stream is
-  lazy, meaning that IO operations are performed at consumption, so that if
-  you stop on first match only operations for up to first match will be
-  performed.
+  Returns stream of all dependent nodes
   **/
+  var node = join(root, {
+    requirement: root.requirement || normalize(root.id),
+    requirements: {}
+  });
+  var requirements = extract(node);
+  var anotated = analyze(requirements);
+  var located = locate(anotated);
+  var identified = identify(located);
+  var requirer = streamer.reduce(function(node, dependency) {
+    var requirement = {};
+    requirement[dependency.requirement] = dependency.id;
+    return join(node, { requirements: join(node.requirements, requirement) });
+  }, identified, node);
 
-  // create lazy stream of booleans, expressing weather path exists or not.
-  var existances = streamer.flatten(streamer.map(exists, paths));
-  // create lazy stream of [ path, exists ] pairs.
-  var entries = streamer.zip(existances, paths);
-  // filter [ path, exists ] pairs only to ones which exists (exists is true).
-  var located = streamer.filter(field(0), entries);
-  // map pairs back to paths.
-  return streamer.map(field(1), located);
+  var dependencies = identified;
+  return streamer.append(requirer, dependencies);
 }
-exports.existing = existing;
+exports.graph = graph;
 
+function dependencies(requirer) {
+  var root = requirer.root;
+  var path = extract.local.normalize(requirer.requirement);
+  var requirements = extract.read(path, root);
+  var nodes = streamer.map(function(requirement) {
+    return {
+      root: root,
+      requirement: requirement,
+      requirer: requirer.requirement
+    };
+  }, requirements);
+
+  var located = streamer.flatten(streamer.map(locate, requirements));
+}
 
 /*
 - Linker may run in backwards **compatible** or **incompatible** modes. Behavior
