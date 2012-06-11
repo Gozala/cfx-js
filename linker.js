@@ -45,6 +45,14 @@ function normalize(path) {
   return relativify(path.substr(-3) === '.js' ? path : path + '.js');
 }
 
+function pathFor(module) {
+  return module.type === 'std' ? path.join(env.JETPACK_PATH, module.path) :
+    module.type === 'local' ? path.join(module.root, module.path) :
+    module.type === 'external' ? path.join(module.root, module.path) :
+    module.type === 'deprecated' ? path.join(env.JETPACK_PATH, module.path) :
+    null;
+}
+
 function exists(path) {
   /**
   Utility function to test weather file under given path exists
@@ -100,14 +108,17 @@ function extract(requirer) {
   the given `path`.
   **/
 
-  var requirements = extract.read(requirer);
-  return streamer.map(function(requirement) {
+  var path = pathFor(requirer);
+  var names = extract.read(path);
+  var requirements = streamer.map(function(name) {
     return {
       root: requirer.root,
-      requirement: requirement,
-      requirer: requirer.id
+      requirement: name,
+      requirer: requirer
     };
-  }, requirements);
+  }, names);
+
+  return path ? requirements : Stream.empty;
 }
 exports.extract = extract;
 
@@ -129,17 +140,14 @@ extract.parse = new function() {
   };
 };
 
-extract.read = function read(requirement) {
+extract.read = function read(path) {
   /**
   Function takes module file path and returns stream of it's
   requirements in form of strings.
   **/
 
-  var file = normalize(requirement.id);
-  var location = path.resolve(requirement.root, file);
   // Read file from the given path.
-
-  var source = fs.read(location);
+  var source = fs.read(path);
   // Map file source to a stream of array of dependency names.
   var names = streamer.map(extract.parse, source);
   // Map arrays to streams and flatten container stream.
@@ -154,24 +162,6 @@ function analyze(requirements) {
   return streamer.map(analyze.annotate, requirements);
 }
 exports.analyze = analyze;
-
-function identify(requirements) {
-  return streamer.map(function(requirement) {
-    var type = requirement.type;
-    var name = requirement.requirement;
-    var requirer = requirement.requirer;
-    var root = requirement.root;
-    var id = type === 'std' ? name :
-             type === 'system' ? name :
-             type === 'local' ? relativify(path.join(path.dirname(requirer), name)) :
-             type === 'external' ? idify(requirement.path) :
-             null;
-
-    return join(requirement, { id: id });
-  }, requirements);
-}
-exports.identify = identify;
-
 analyze.annotate = function annotate(node) {
   /**
   Function takes module requirement and adds a type annotation to it,
@@ -194,6 +184,24 @@ function locate(requirements, requirer) {
     streamer.flatten(streamer.map(locate.unknown, unknown))
   );
 }
+
+function identify(requirements) {
+  return streamer.map(function(requirement) {
+    var type = requirement.type;
+    var name = requirement.requirement;
+    var requirer = requirement.requirer;
+    var root = requirement.root;
+    var id = type === 'std' ? name :
+             type === 'system' ? name :
+             type === 'local' ? relativify(path.join(path.dirname(requirer.id), name)) :
+             type === 'external' ? idify(requirement.path) :
+             null;
+
+    return join(requirement, { id: id });
+  }, requirements);
+}
+exports.identify = identify;
+
 exports.locate = locate;
 
 locate.local = function local(requirement) {
@@ -202,17 +210,27 @@ locate.local = function local(requirement) {
   a stream of single `requirement` containing `path` property for the given
   requirement.
   **/
-
+  var requirer = requirement.requirer;
+  var type = requirer.type;
   // Resolve base directory of the requirer.
-  var base = path.dirname(path.join(requirement.root, requirement.requirer));
+  var base = path.dirname(pathFor(requirer));
   // Resolve file path where requirement must be located.
   var file = path.join(base, normalize(requirement.requirement));
   // Get a stream of verified file paths, in this case it's either stream
   // of single item `file` or empty. Later would mean that file was not found.
   var paths = existing(Stream.of(file));
   // We refine `requirement` with a `path` information.
-  var refined = streamer.map(function(path) {
-    return join(requirement, { path: path });
+  var refined = streamer.map(function(value) {
+    value = type === 'std' ? path.relative(env.JETPACK_PATH, value) :
+      type === 'deprecated' ? path.relative(env.JETPACK_PATH, value) :
+      type === 'external' ? path.relative(requirement.root, value) :
+      type === 'local' ? path.relative(requirement.root, value) :
+      type === 'system' ? null : value;
+
+    return join(requirement, {
+      type: requirer.type,
+      path: value && relativify(value)
+    });
   }, paths);
   // We append broken requirement node to the end of the refined
   // stream, this way if it's empty broken node will be the first in
@@ -220,9 +238,9 @@ locate.local = function local(requirement) {
   // a first match.
   var result = streamer.append(refined, Stream.of(join(requirement, {
     path: file,
-    error: 'Module :' + requirement +
-      ' required by module :' + requirement.requirer +
-      ' could not be located at :' + file
+    error: 'Module: ' + requirement.requirement +
+      ' required by module: ' + requirer.id +
+      ' could not be located at: ' + file
   })));
 
   return streamer.take(1, result);
@@ -298,7 +316,7 @@ locate.std = function(requirement) {
 };
 locate.std.lookups = function(requirement) {
   // Standard library modules are in JETPACK_PATH/lib/
-  return [ path.join(env.JETPACK_PATH, './lib/', normalize(requirement.id)) ];
+  return [ path.join(env.JETPACK_PATH, './lib/', normalize(requirement.requirement)) ];
 };
 
 locate.deprecated = function locate(node) {
@@ -322,14 +340,46 @@ locate.deprecated.find = function(requirement, requirer, root) {
   return existing(paths);
 };
 
-function graph(root) {
+function link(requirement, path) {
+  path = path || process.cwd();
+  return cleanup(graph({
+    root: path,
+    type: 'local',
+    id: requirement,
+    path: normalize(requirement),
+    requirement: requirement
+  }, []));
+}
+exports.link = link;
+
+function manifest(requirement, path) {
+  return streamer.reduce(function(result, node) {
+    result[node.id] = node;
+    return result;
+  }, link(requirement, path), {});
+}
+exports.manifest = manifest;
+
+function cleanup(graph) {
+  return streamer.map(function(node) {
+    return {
+      path: node.path,
+      id: node.id,
+      type: node.type,
+      requirements: node.requirements
+    };
+  }, graph);
+}
+exports.cleanup = cleanup;
+
+function graph(root, visited) {
   /**
   Returns stream of all dependent nodes
   **/
-  var node = join(root, {
-    requirement: root.requirement || normalize(root.id),
-    requirements: {}
-  });
+
+  visited.push({ type: root.type, id: root.id });
+
+  var node = join(root, { requirements: {} });
   var requirements = extract(node);
   var anotated = analyze(requirements);
   var located = locate(anotated);
@@ -340,24 +390,20 @@ function graph(root) {
     return join(node, { requirements: join(node.requirements, requirement) });
   }, identified, node);
 
-  var dependencies = identified;
-  return streamer.append(requirer, dependencies);
+  return streamer.append(requirer, dependencies(identified, visited));
 }
 exports.graph = graph;
 
-function dependencies(requirer) {
-  var root = requirer.root;
-  var path = extract.local.normalize(requirer.requirement);
-  var requirements = extract.read(path, root);
-  var nodes = streamer.map(function(requirement) {
-    return {
-      root: root,
-      requirement: requirement,
-      requirer: requirer.requirement
-    };
+function dependencies(requirements, visited) {
+  // filter out not yet known requirements.
+  var unknown = streamer.filter(function(requirement) {
+    return !visited.some(function(node) {
+      return node.type === requirement.type && node.id === requirement.id;
+    });
   }, requirements);
-
-  var located = streamer.flatten(streamer.map(locate, requirements));
+  return streamer.flatten(streamer.map(function(requirement) {
+    return graph(requirement, visited);
+  }, unknown));
 }
 
 /*
