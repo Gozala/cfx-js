@@ -5,6 +5,3 @@
 /*jshint node: true globalstrict: true */
 
 'use strict';
-
-var ns = require('toolkit/namespace');
-var events = require('./event/core');
