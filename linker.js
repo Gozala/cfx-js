@@ -333,7 +333,7 @@ locate.deprecated.lookups = function(from) {
 };
 locate.deprecated.find = function(requirement, requirer, root) {
   // create array of lookups directories.
-  var directories = locate.system.lookups(env.JETPACK_PATH);
+  var directories = locate.deprecated.lookups(env.JETPACK_PATH);
   var paths = streamer.map(function(directory) {
     return path.join(directory, requirement);
   }, Stream.from(directories));
