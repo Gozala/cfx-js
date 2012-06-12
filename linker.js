@@ -195,6 +195,7 @@ function identify(requirements) {
              type === 'system' ? name :
              type === 'local' ? relativify(path.join(path.dirname(requirer.id), name)) :
              type === 'external' ? idify(requirement.path) :
+             type === 'deprecated' ? idify(requirement.path) :
              null;
 
     return join(requirement, { id: id });
@@ -332,9 +333,17 @@ locate.std.lookups = function(requirement) {
   return [ path.join(env.JETPACK_PATH, './lib/', normalize(requirement.requirement)) ];
 };
 
-locate.deprecated = function locate(node) {
-  // So far just return empty
-  return Stream.of();
+locate.deprecated = function(requirement) {
+  var paths = locate.deprecated.find(requirement);
+
+  var result = streamer.map(function(entry) {
+    return join(requirement, {
+      type: 'deprecated',
+      path: relativify(path.relative(env.JETPACK_PATH, entry))
+    });
+  }, paths);
+
+  return result;
 };
 locate.deprecated.lookups = function(from) {
   return [
@@ -344,11 +353,13 @@ locate.deprecated.lookups = function(from) {
     return path.join(from, directory);
   });
 };
-locate.deprecated.find = function(requirement, requirer, root) {
+locate.deprecated.find = function(requirement) {
   // create array of lookups directories.
+  var file = normalize(requirement.requirement);
   var directories = locate.deprecated.lookups(env.JETPACK_PATH);
+
   var paths = streamer.map(function(directory) {
-    return path.join(directory, requirement);
+    return path.join(directory, file);
   }, Stream.from(directories));
   return existing(paths);
 };
