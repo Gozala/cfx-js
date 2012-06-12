@@ -293,14 +293,27 @@ locate.external.lookups = function lookups(from) {
 };
 locate.external.find = function(requirement) {
   var root = requirement.root;
-  var base = path.dirname(path.join(root, requirement.requirer));
+  var requirer = pathFor(requirement.requirer);
+  var base = path.dirname(requirer);
   var file = normalize(requirement.requirement);
   // create array of lookups directories.
   var directories = locate.external.lookups(base);
-  var paths = streamer.map(function(directory) {
-    return path.join(root, directory, file);
-  }, Stream.from(directories));
-  return existing(paths);
+
+  // Generate paths where requirement module may be found.
+  var paths = directories.map(function(directory) {
+    return path.join(directory, file);
+  }).
+  // Make sure that module requirement does not requires itself.
+  // For example module from 'my-addon/@modules/tabs.js' may require
+  // 'tabs' module, that should be `tabs` system module rather than
+  // 'my-addon/@modules/tabs.js' itself.
+  filter(function(path) {
+    return path !== requirer;
+  });
+  // Create a lazy stream of existing paths. Stream elements are ordered
+  // by a best match, there for first item in stream is a best match. If
+  // stream is empty module is not found.
+  return existing(Stream.from(paths));
 };
 
 locate.std = function(requirement) {
