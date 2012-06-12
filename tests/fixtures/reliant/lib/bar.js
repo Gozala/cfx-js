@@ -6,4 +6,4 @@
 
 'use strict';
 
-var baz = require('./sub/baz');
+var baz = require('./utils/baz');

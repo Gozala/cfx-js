@@ -6,4 +6,7 @@
 
 'use strict';
 
-
+// Circular require.
+var foo = require('../foo');
+// local dependencies
+var fs = require('fs');

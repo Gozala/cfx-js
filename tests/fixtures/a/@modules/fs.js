@@ -1,15 +1,8 @@
-/* vim:set ts=2 sw=2 sts=2 expandtab */
-/*jshint asi: true newcap: true undef: true es5: true node: true devel: true
-         forin: true */
-/*global define: true */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+/*jshint node: true globalstrict: true */
 
-(typeof define === "undefined" ? function ($) { $(require, exports, module) } : define)(function (require, exports, module, undefined) {
+'use strict';
 
-"use strict";
-
-
-
-if (module == require.main)
-  require("test").run(exports);
-
-})
