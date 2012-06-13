@@ -352,12 +352,11 @@ locate.deprecated = function(requirement) {
   return result;
 };
 locate.deprecated.lookups = function(from) {
-  return [
-    './packages/addon-kit/lib/',
-    './packages/api-utils/lib/'
-  ].map(function(directory) {
-    return path.join(from, directory);
-  });
+  // TODO: Receive --package-path
+  var descriptors = packages([ path.join(from, './packages/') ]);
+  return map(function(node) {
+    return path.join(node.path, node.descriptor.lib || './lib/');
+  }, descriptors);
 };
 locate.deprecated.find = function(requirement) {
   // create array of lookups directories.
@@ -366,7 +365,7 @@ locate.deprecated.find = function(requirement) {
 
   var paths = map(function(directory) {
     return path.join(directory, file);
-  }, Stream.from(directories));
+  }, directories);
   return existing(paths);
 };
 
@@ -435,6 +434,52 @@ function dependencies(requirements, visited) {
     return graph(requirement, visited);
   }, unknown);
 }
+
+function packages(locations) {
+  /**
+  Takes array of package directories and returns stream of nodes containing
+  `path` to the package and it's parsed `descriptor`.
+  **/
+
+  // Expand stream package `locations` with a resolved paths of their entries.
+  var directories = expand(function(location) {
+    return map(function(entry) {
+      return path.join(location, entry);
+    }, fs.list(location));
+  }, Stream.from(locations));
+  // Create stream of `package.json` paths and reduce it down to only existing
+  // ones.
+  var files = existing(map(function(directory) {
+    return path.join(directory, './package.json');
+  }, directories));
+  // Expand stream to the contents of `package.json`
+  var sources = expand(fs.read, files);
+  // Map `files` to nodes containing `path` for the enclosing package &
+  // json parsed `descriptor` for it.
+  var descriptors = map(function(entry) {
+    return {
+      path: path.dirname(entry[0]),
+      descriptor: JSON.parse(entry[1])
+    };
+  }, zip(files, sources));
+
+  // Sort nodes by package names. Note: cfx-py was putting SDK packages to the
+  // top of the list, but it looks like currently no add-on depends on this
+  // so we just sort, which is likely to work anyway since both `addon-kit` and
+  // `api-utils` are likely to be on top the list anyway.
+  return sort(function(a, b) {
+    return a.descriptor.name > b.descriptor.name;
+  }, descriptors);
+}
+exports.packages = packages;
+
+function sort(f, stream) {
+  var sorted = reduce(function(result, value) {
+    return result.concat([ value ]).sort(f);
+  }, stream, []);
+  return expand(Stream.from, sorted);
+}
+exports.sort = sort;
 
 /*
 - Linker may run in backwards **compatible** or **incompatible** modes. Behavior
