@@ -12,8 +12,10 @@ var streamer = require('streamer/core'),
     expand = streamer.expand, zip = streamer.zip, capture = streamer.capture,
     mix = streamer.mix, append = streamer.append, take = streamer.take,
     reduce = streamer.reduce;
-var functional = require('./functional'),
-    field = functional.field, join = functional.join;
+var reactive = require('./reactive'),
+    field = reactive.field, join = reactive.join,
+    is = reactive.is, isnt = reactive.isnt, value = reactive.value,
+    identity = reactive.identity;
 var requirement = require('./requirement'),
     isLocal = requirement.isLocal, normalize = requirement.normalize,
     idify = requirement.idify, relativify = requirement.relativify;
@@ -149,18 +151,12 @@ analyze.annotate = function annotate(node) {
 };
 
 function locate(requirements, requirer) {
-  var local = filter(function(requirement) {
-    return requirement.type === 'local';
-  }, requirements);
-
-  var unknown = filter(function(requirement) {
-    return requirement.type === 'unknown';
-  }, requirements);
+  var local = filter(is(field('type'), 'local'), requirements);
+  var unknown = filter(is(field('type'), 'unknown'), requirements);
 
   return mix(
     expand(locate.local, local),
-    expand(locate.unknown, unknown)
-  );
+    expand(locate.unknown, unknown));
 }
 
 function identify(requirements) {
@@ -288,9 +284,7 @@ locate.external.find = function(requirement) {
   // For example module from 'my-addon/@modules/tabs.js' may require
   // 'tabs' module, that should be `tabs` system module rather than
   // 'my-addon/@modules/tabs.js' itself.
-  filter(function(path) {
-    return path !== requirer;
-  });
+  filter(isnt(identity, requirer));
   // Create a lazy stream of existing paths. Stream elements are ordered
   // by a best match, there for first item in stream is a best match. If
   // stream is empty module is not found.

@@ -8,14 +8,20 @@
 'use strict';
 
 function identity(value) {
+  return value;
+}
+exports.identity = identity;
+
+function value(result) {
   /**
   Utility function takes a `value` and returns function that returns `value`
   when it's called.
   **/
   return function() {
-    return value;
+    return result;
   };
 }
+exports.value = value;
 
 function field(name) {
   /**
@@ -28,6 +34,23 @@ function field(name) {
   };
 }
 exports.field = field;
+
+function is(actual, expected) {
+  actual = typeof(actual) === 'function' ? actual : value(actual);
+  expected = typeof(expected) === 'function' ? expected : value(expected);
+  return function assertion(object) {
+    return actual(object) === expected(object);
+  };
+}
+exports.is = is;
+
+function isnt(actual, expected) {
+  var assert = is(actual, expected);
+  return function assertion(object) {
+    return !assert(object);
+  };
+}
+exports.isnt = isnt;
 
 function join(a, b) {
   var descriptor = {};
