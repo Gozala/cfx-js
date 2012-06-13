@@ -12,42 +12,16 @@ var streamer = require('streamer/core'),
     expand = streamer.expand, zip = streamer.zip, capture = streamer.capture,
     mix = streamer.mix, append = streamer.append, take = streamer.take,
     reduce = streamer.reduce;
+var functional = require('./functional'),
+    field = functional.field, join = functional.join;
+var requirement = require('./requirement'),
+    isLocal = requirement.isLocal, normalize = requirement.normalize,
+    idify = requirement.idify, relativify = requirement.relativify;
 var fs = require('fs-streamer/fs');
 var path = require('path');
 var env = require('environment').env;
 
-// Utility function that takes field `name` and returns function
-// that returns value of the given `target` argument's field with
-// this `name`.
-function field(name) {
-  return function getField(target) {
-    return target[name];
-  };
-}
 
-function join(a, b) {
-  var descriptor = {};
-  var names = Object.getOwnPropertyNames(a).concat(Object.getOwnPropertyNames(b));
-  names.forEach(function(name) {
-    descriptor[name] = Object.getOwnPropertyDescriptor(b, name) ||
-      Object.getOwnPropertyDescriptor(a, name);
-  });
-  return Object.create(Object.prototype, descriptor);
-}
-
-function isLocal(requirement) { return requirement[0] === '.'; }
-
-function relativify(path) {
-  return path[0] !== '.' ? './' + path : path;
-}
-
-function idify(path) {
-  return path.substr(-3) === '.js' ? path.substr(0, path.length - 3) : path;
-}
-
-function normalize(path) {
-  return relativify(path.substr(-3) === '.js' ? path : path + '.js');
-}
 
 function pathFor(module) {
   return module.type === 'std' ? path.join(env.JETPACK_PATH, module.path) :
