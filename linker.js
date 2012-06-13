@@ -9,7 +9,7 @@
 
 var streamer = require('streamer/core'),
     Stream = streamer.Stream, map = streamer.map, filter = streamer.filter,
-    flatten = streamer.flatten, zip = streamer.zip, capture = streamer.capture,
+    expand = streamer.expand, zip = streamer.zip, capture = streamer.capture,
     mix = streamer.mix, append = streamer.append, take = streamer.take,
     reduce = streamer.reduce;
 var fs = require('fs-streamer/fs');
@@ -33,10 +33,6 @@ function join(a, b) {
       Object.getOwnPropertyDescriptor(a, name);
   });
   return Object.create(Object.prototype, descriptor);
-}
-
-function expand(f, source) {
-  return flatten(map(f, source));
 }
 
 function isLocal(requirement) { return requirement[0] === '.'; }
