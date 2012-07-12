@@ -18,7 +18,15 @@ var stream = require('./stream'),
     select = stream.select;
 
 function stat(path) {
-  return capture(function() { return Stream.of(null); }, fs.stat(path));
+  /**
+  Take `path` and return stream containing single item: File `stats` if it
+  exists or `null` if it isn't.
+  **/
+  return capture(function() {
+    // If `fs.stat` errors than it means file does not exists, recover
+    // with `null` stream in such case.
+    return Stream.of(null);
+  }, fs.stat(path));
 }
 exports.stat = stat;
 
