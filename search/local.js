@@ -13,17 +13,7 @@ var existing = require('../io').existing;
 var streamer = require('streamer/core'),
     Stream = streamer.Stream, append = streamer.append, map = streamer.map;
 
-function makeMissingModuleNode(requirement, searchPath, requirerPath, type) {
-  return {
-    error: 'Module required by: `' + requirerPath +
-           ' as `require("' + requirement + '")`' +
-           ' was not found at: ' + searchPath,
-    type: type,
-    path: searchPath
-  };
-} 
-
-function search(requirement, requirerPath, requirerType) {
+function search(requirement, requirerPath) {
   /**
   Function takes relative require term as `requirement` string, requirer
   module path and type. And returns stream of discovered matches in order
@@ -39,21 +29,6 @@ function search(requirement, requirerPath, requirerType) {
 
   // Get a stream of verified file paths, in this case it's either stream
   // of single item `file` or empty. Later would mean that file was not found.
-  var discoveredPaths = existing(Stream.of(searchPath));
-
-  // We create nodes for the distributed `requirement` with a `path`
-  // information and type information. Node type will be just inherited
-  // from `requirer` since 
-  var nodes = map(function(path) {
-    return { type: requirerType, path: path };
-  }, discoveredPaths);
-
-  var notFound = makeMissingModuleNode(requirement, searchPath,
-                                       requirerPath, requirerType);
-
-  // We append `notFound` node to the end of the `nodes` stream. This way
-  // if stream is `nodes` stream is empty node with error will be the first
-  // match.
-  return append(nodes, Stream.of(notFound));
+  return existing(Stream.of(searchPath));
 }
 exports.search = search;
