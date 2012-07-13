@@ -7,12 +7,12 @@
 
 'use strict';
 
-var search = require('../search/local').search;
-var fixtures = require('./fixtures');
+var search = require('../../search/local').search;
+var fixtures = require('../fixtures');
 var streamer = require('streamer/core'),
     map = streamer.map;
 
-exports.Assert = require('./assert').Assert;
+exports.Assert = require('../assert').Assert;
 
 function node(path, type) {
   return { path: path, type: type };
@@ -55,8 +55,8 @@ exports['test find missing module'] = function(expect, complete) {
 
 exports['test find relative upper dir'] = function(expect, complete) {
   var requirerType = 'external';
-  var requirerPath = fixtures.resolve('a', '@modules', 'foo', 'bar.js');
-  var searchPath = fixtures.resolve('a', '@modules', 'foo.js');
+  var requirerPath = fixtures.resolve('a', 'node_modules', 'foo', 'bar.js');
+  var searchPath = fixtures.resolve('a', 'node_modules', 'foo.js');
   var searchTerm = '../foo';
 
   var actual = search(searchTerm, requirerPath, requirerType);
@@ -69,8 +69,8 @@ exports['test find relative upper dir'] = function(expect, complete) {
 exports['test nested dir'] = function(expect, complete) {
   var requirerType = 'local';
   var requirerPath = fixtures.resolve('a', 'main.js');
-  var searchPath = fixtures.resolve('a', '@modules', 'foo', 'bar.js');
-  var searchTerm = './@modules/foo/bar';
+  var searchPath = fixtures.resolve('a', 'node_modules', 'foo', 'bar.js');
+  var searchTerm = './node_modules/foo/bar';
 
   var actual = search(searchTerm, requirerPath, requirerType);
 
