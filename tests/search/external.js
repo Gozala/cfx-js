@@ -16,6 +16,9 @@ exports.Assert = require('../assert').Assert;
 
 var modulesDirectory = 'node_modules';
 
+function node(requirement, path) {
+  return { type: 'external', path: path, requirement: requirement };
+}
 exports['test existing external dependency'] = function(expect, complete) {
   var rootPath = fixtures.resolve('a');
   var requirerPath = fixtures.resolve('a', 'main.js');
@@ -24,7 +27,7 @@ exports['test existing external dependency'] = function(expect, complete) {
 
   var actual = search(searchTerm, requirerPath, rootPath, modulesDirectory);
 
-  expect(actual).to.be(modulePath).then(complete);
+  expect(actual).to.be(node(searchTerm, modulePath)).then(complete);
 };
 
 exports['test missing external dependency'] = function(expect, complete) {

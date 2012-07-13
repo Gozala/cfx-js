@@ -7,7 +7,8 @@
 
 'use strict';
 
-var Stream = require('streamer/core').Stream;
+var streamer = require('streamer/core'),
+    Stream = streamer.Stream, map = streamer.map;
 var normalize = require('../requirement').normalize;
 var existing = require('../io').existing;
 var path = require('path');
@@ -28,7 +29,15 @@ function search(requirement, requirerPath, rootPath, dependenciesDirectory) {
   // Create a lazy stream of existing paths. Stream elements are ordered
   // by a best match, there for first item in stream is a best match. If
   // stream is empty module is not found.
-  return existing(Stream.from(seachPaths));
+  var found = existing(Stream.from(seachPaths));
+
+  return map(function(path) {
+    return {
+      path: path,
+      requirement: requirement,
+      type: 'external'
+    };
+  }, found);
 }
 exports.search = search;
 
