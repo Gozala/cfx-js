@@ -7,8 +7,15 @@
 
 'use strict';
 
-function isSingleTerm(requirement) { return requirement.indexOf('/') < 0; }
-exports.isSingleTerm = isSingleTerm;
+function isMultiterm(requirement) {
+  /**
+  Returns `true` if the requirement is a multi-term (contains a slash `/`)
+  such as `require('package/module/path')`. Otherwise return false.
+  **/
+
+  return requirement.indexOf('/') >= 0;
+}
+exports.isMultiterm = isMultiterm;
 
 function isLocal(requirement) { return requirement[0] === '.'; }
 exports.isLocal = isLocal;

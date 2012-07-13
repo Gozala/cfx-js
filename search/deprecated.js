@@ -15,7 +15,8 @@ var reactive = require('../reactive'),
 
 var requirement = require('../requirement'),
     isLocal = requirement.isLocal, normalize = requirement.normalize,
-    idify = requirement.idify, relativify = requirement.relativify;
+    idify = requirement.idify, relativify = requirement.relativify,
+    isMultiterm = requirement.isMultiterm;
 
 var stream = require('../stream'),
     select = stream.select, sort = stream.sort;
@@ -31,15 +32,6 @@ var io = require('../io'),
 
 var fs = require('fs-streamer/fs');
 var path = require('path');
-
-function isMultiterm(requirement) {
-  /**
-  Returns `true` if the requirement is a multi-term (contains a slash `/`)
-  such as `require('package/module/path')`. Otherwise return false.
-  **/
-  return !!~requirement.indexOf('/');
-}
-exports.isMultiterm = isMultiterm;
 
 function extractPackageName(requirement) {
   /**

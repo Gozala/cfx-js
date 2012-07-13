@@ -9,7 +9,7 @@
 
 var Stream = require('streamer/core').Stream;
 var requirement = require('../requirement'),
-    normalize = requirement.normalize, isSingleTerm = requirement.isSingleTerm;
+    normalize = requirement.normalize, isMultiterm = requirement.isMultiterm;
 var existing = require('../io').existing;
 var path = require('path');
 
@@ -19,7 +19,7 @@ function search(requirement, jetpackPath) {
   contains path to the searched requirement or is empty if module is not
   found.
   **/
-  requirement = isSingleTerm(requirement) ? 'sdk/' + requirement : requirement;
+  requirement = isMultiterm(requirement) ? requirement : 'sdk/' + requirement;
   var modulePath = path.join(jetpackPath, 'lib', normalize(requirement));
   return existing(Stream.of(modulePath));
 }
