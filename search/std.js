@@ -7,7 +7,8 @@
 
 'use strict';
 
-var Stream = require('streamer/core').Stream;
+var streamer = require('streamer/core'),
+    Stream = streamer.Stream, map = streamer.map;
 var requirement = require('../requirement'),
     normalize = requirement.normalize, isMultiterm = requirement.isMultiterm;
 var existing = require('../io').existing;
@@ -21,6 +22,14 @@ function search(requirement, jetpackPath) {
   **/
   requirement = isMultiterm(requirement) ? requirement : 'sdk/' + requirement;
   var modulePath = path.join(jetpackPath, 'lib', normalize(requirement));
-  return existing(Stream.of(modulePath));
+  var found = existing(Stream.of(modulePath));
+
+  return map(function(path) {
+    return {
+      path: path,
+      requirement: requirement,
+      type: 'std'
+    };
+  }, found);
 }
 exports.search = search;

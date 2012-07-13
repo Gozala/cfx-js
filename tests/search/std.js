@@ -23,13 +23,17 @@ function makePath() {
   return fixtures.resolve.apply(null, fullPath);
 }
 
+function makeNode(requirement, path) {
+  return { requirement: requirement, path: path, type: 'std' };
+}
+
 exports['test seach low level module'] = function(expect, complete) {
   var modulePath = makePath('sdk', 'core', 'heritage.js');
   var searchTerm = 'sdk/core/heritage';
 
   var actual = search(searchTerm, jetpackPath);
 
-  expect(actual).to.be(modulePath).then(complete);
+  expect(actual).to.be(makeNode(searchTerm, modulePath)).then(complete);
 };
 
 exports['test seach high level module`'] = function(expect, complete) {
@@ -38,7 +42,7 @@ exports['test seach high level module`'] = function(expect, complete) {
 
   var actual = search(searchTerm, jetpackPath);
 
-  expect(actual).to.be(modulePath).then(complete);
+  expect(actual).to.be(makeNode('sdk/panel', modulePath)).then(complete);
 };
 
 exports['test missing dependency'] = function(expect, complete) {
