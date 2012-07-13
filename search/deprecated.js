@@ -49,7 +49,7 @@ function extractModulePath(requirement) {
 }
 exports.extractModulePath = extractModulePath;
 
-function search(requirement, packages, options) {
+function search(requirement, packages, root) {
   var named = isMultiterm(requirement) ?
     // If the requirement is a multi-term (contains a slash `/`) such
     // as `require('package/module/path')`, the loader interprets first
@@ -75,7 +75,7 @@ function search(requirement, packages, options) {
 
   // Then it searches in the add-on package itself. If module is not discovered
   // returned stream will be empty.
-  var own = map(mark.own(requirement), search.own(requirement, packages, options));
+  var own = map(mark.own(requirement), search.own(requirement, packages, root));
 
   // Finally it searches in all the dependency packages (if no dependencies are
   // declared all packages are treated as dependencies). If module is not
@@ -208,13 +208,13 @@ search.core = function(requirement, descriptors) {
   return search.from(requirement, matches);
 };
 
-search.own = function(requirement, descriptors, options) {
+search.own = function(requirement, descriptors, root) {
   /**
   Treats given `requirement` as a relative one and looks for matching
-  module paths with in the package itself. `options.root` is path of the
+  module paths with in the package itself. `root` is path of the
   package from which require was initiated, this the package that will be used.
   **/
-  var matches = filter(is(query('linker.path'), options.root), descriptors);
+  var matches = filter(is(query('linker.path'), root), descriptors);
   return search.from(requirement, matches);
 };
 
