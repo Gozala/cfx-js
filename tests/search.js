@@ -13,6 +13,5 @@ exports['test search external'] = require('./search/external');
 exports['test search std'] = require('./search/std');
 
 
-
 if (module == require.main)
   require("test").run(exports);

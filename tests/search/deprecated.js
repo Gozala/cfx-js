@@ -23,10 +23,11 @@ function addon(name) {
 }
 
 function node(type, requirement, path) {
+  var base = [ 'JETPACK_PATH', '1.8', 'packages' ];
   return {
     type: 'deprecated',
     requirement: requirement,
-    path: fixtures.resolve('JETPACK_PATH', '1.8', 'packages', path),
+    path: fixtures.resolve.apply(null, base.concat(path)),
     warning: { type: type }
   };
 }
@@ -34,57 +35,57 @@ function node(type, requirement, path) {
 exports['test search "two" from "one"'] = function(expect, complete) {
   var actual = search('two', packages(), { root: addon('one') });
   expect(actual).to.be(
-    node('main', 'two', 'two/index.js'),
-    node('own', 'two', 'one/lib/two.js'),
-    node('dependency', 'two', 'one/lib/two.js')).then(complete);
+    node('main', 'two', ['two', 'index.js']),
+    node('own', 'two', ['one', 'lib', 'two.js']),
+    node('dependency', 'two', ['one', 'lib', 'two.js'])).then(complete);
 };
 
 exports['test search "main" from "one"'] = function(expect, complete) {
   var actual = search('main', packages(), { root: addon('one') });
   expect(actual).to.be(
-    node('own', 'main', 'one/lib/main.js'),
-    node('dependency', 'main', 'five/lib/main.js'),
-    node('dependency', 'main', 'four/lib/main.js'),
-    node('dependency', 'main', 'one/lib/main.js'),
-    node('dependency', 'main', 'seven/lib/main.js'),
-    node('dependency', 'main', 'three/lib/main.js')).then(complete);
+    node('own', 'main', ['one', 'lib', 'main.js']),
+    node('dependency', 'main', ['five', 'lib', 'main.js']),
+    node('dependency', 'main', ['four', 'lib', 'main.js']),
+    node('dependency', 'main', ['one', 'lib', 'main.js']),
+    node('dependency', 'main', ['seven', 'lib', 'main.js']),
+    node('dependency', 'main', ['three', 'lib', 'main.js'])).then(complete);
 };
 
 exports['test search "tree" from "one"'] = function(expect, complete) {
   var actual = search('three', packages(), { root: addon('one') });
   expect(actual).to.be(
-    node('main', 'three', 'three/lib/main.js')).then(complete);
+    node('main', 'three', ['three', 'lib', 'main.js'])).then(complete);
 };
 
 exports['test search "addon-kit/panel" from "one"'] = function(expect, complete) {
   var actual = search('addon-kit/panel', packages(), { root: addon('one') });
   expect(actual).to.be(
-    node('packaged', 'addon-kit/panel', 'addon-kit/lib/panel.js')
+    node('packaged', 'addon-kit/panel', [ 'addon-kit', 'lib', 'panel.js' ])
   ).then(complete);
 };
 
 exports['test search "panel" from "one"'] = function(expect, complete) {
   var actual = search('panel', packages(), { root: addon('one') });
   expect(actual).to.be(
-    node('core', 'panel', 'addon-kit/lib/panel.js'),
-    node('dependency', 'panel', 'addon-kit/lib/panel.js')
+    node('core', 'panel', ['addon-kit', 'lib', 'panel.js' ]),
+    node('dependency', 'panel', [ 'addon-kit', 'lib', 'panel.js' ])
   ).then(complete);
 };
 
 exports['test search "promise" from "one"'] = function(expect, complete) {
   var actual = search('promise', packages(), { root: addon('one') });
   expect(actual).to.be(
-    node('core', 'promise', 'api-utils/lib/promise.js'),
-    node('dependency', 'promise', 'api-utils/lib/promise.js')
+    node('core', 'promise', [ 'api-utils', 'lib', 'promise.js' ]),
+    node('dependency', 'promise', [ 'api-utils', 'lib', 'promise.js' ])
   ).then(complete);
 };
 
 exports['test search "two/core" from "one"'] = function(expect, complete) {
   var actual = search('two/core', packages(), { root: addon('one') });
   expect(actual).to.be(
-    node('packaged', 'two/core', 'two/core.js'),
-    node('own', 'two/core', 'one/lib/two/core.js'),
-    node('dependency', 'two/core', 'one/lib/two/core.js')
+    node('packaged', 'two/core', [ 'two', 'core.js' ]),
+    node('own', 'two/core', [ 'one', 'lib', 'two', 'core.js' ]),
+    node('dependency', 'two/core', [ 'one', 'lib', 'two', 'core.js' ])
   ).then(complete);
 };
 
