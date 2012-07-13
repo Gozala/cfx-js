@@ -7,17 +7,17 @@
 
 'use strict';
 
-var reactive = require('./reactive'),
+var reactive = require('../reactive'),
     field = reactive.field, join = reactive.join,
     is = reactive.is, isnt = reactive.isnt, value = reactive.value,
     identity = reactive.identity, query = reactive.query, is = reactive.is,
     and = reactive.and, or = reactive.or, method = reactive.method;
 
-var requirement = require('./requirement'),
+var requirement = require('../requirement'),
     isLocal = requirement.isLocal, normalize = requirement.normalize,
     idify = requirement.idify, relativify = requirement.relativify;
 
-var stream = require('./stream'),
+var stream = require('../stream'),
     select = stream.select, sort = stream.sort;
 
 var streamer = require('streamer/core'),
@@ -26,12 +26,11 @@ var streamer = require('streamer/core'),
     mix = streamer.mix, append = streamer.append, take = streamer.take,
     reduce = streamer.reduce;
 
-var io = require('./io'),
+var io = require('../io'),
     existing = io.existing;
 
 var fs = require('fs-streamer/fs');
 var path = require('path');
-var env = require('environment').env;
 
 function isMultiterm(requirement) {
   /**
@@ -90,7 +89,7 @@ function search(requirement, packages, options) {
   // declared all packages are treated as dependencies). If module is not
   // discovered stream will be empty.
   var dependency = map(mark.dependency(requirement),
-                      search.dependency(requirement, packages));
+                       search.dependency(requirement, packages));
 
   // Concatenate all results in an order of priority. Note that each step
   // (including the following one) returns a lazy stream, there for
@@ -102,10 +101,11 @@ exports.search = search;
 
 function descriptor(directory) {
   /**
-  Takes package `path` and returns a stream of objects that contain
-  package `path` & `descriptor` of the underlaying package. If path
-  is invalid (it's not a package path, or `package.json` can not be
-  parsed) stream will be empty.
+  Takes package `path` and returns stream of single item representing enclosed
+  package descriptor (parsed package.json) with additional `linker.path`
+  property representing path to package directory. If path is invalid (it's not
+  a package path, or `package.json` can not be parsed) item will only contain
+  `error` and `linker.path` properties.
   **/
 
   // Resolve descriptor path.
@@ -120,6 +120,8 @@ function descriptor(directory) {
       linker: { path: directory } });
   }, content);
 
+  // If reading or parsing failed, package is invalid and we return descriptor
+  // with `error` massage and `linker.path` property.
   return capture(function() {
     return Stream.of({
       error: 'Invalid package',
@@ -131,10 +133,12 @@ exports.descriptor = descriptor;
 
 function descriptors(paths) {
   /**
-  Takes array of package directories and returns stream of nodes containing
+  Takes array of `packages` directories and returns stream of nodes containing
   `path` to the package and it's parsed `descriptor`.
   **/
 
+  // Since each path is directory for packages we create stream of all package
+  // directories by listing entries of each one.
   var locations = expand(function(directory) {
     var entries = fs.list(directory);
     return map(function(entry) {
@@ -142,70 +146,83 @@ function descriptors(paths) {
     }, entries);
   }, Stream.from(paths));
 
+  // expand each path to it's stats and filter out only ones that are
+  // directories.
   var stats = filter(method('isDirectory'), expand(fs.stat, locations));
+  // Finally map stats back to paths.
   var directories = map(field('path'), stats);
 
+  // Now all package directories paths are expected to it's descriptors.
   return expand(descriptor, directories);
 }
 exports.descriptors = descriptors;
 
-search.from = function(requirement, packages) {
+search.from = function(requirement, descriptors) {
+  /**
+  Searches for a given requirement in given package descriptors. `requirement`
+  is assumed to be a relative path with in the package. Returns stream of paths
+  for modules that happen to exist. Stream is empty if no match is discovered.
+  **/
+
   var file = normalize(requirement);
   var paths = map(function(descriptor) {
     return path.join(descriptor.linker.path, descriptor.lib || 'lib', file);
-  }, packages);
+  }, descriptors);
   return existing(paths);
 };
 
-search.main = function(requirement, packages) {
+search.main = function(requirement, descriptors) {
   /**
   Searches for a requirement as an entry point `module`
-  from the given `packages` and returns stream of matches.
+  from the given package descriptors and returns stream of matches.
   **/
 
   // Filter out packages that have a `name` matching a `requirement`.
-  var matches = filter(is(field('name'), requirement), packages);
-  // Map each matching package to a `path` of it's entry point module
-  // by looking into `lib` and `main` properties of the descriptor.
+  var matches = filter(is(field('name'), requirement), descriptors);
+  // Map each match to `path` of it's entry point module by looking into `lib`
+  // and `main` properties of the descriptor.
   return map(function(descriptor) {
+    // Default value for `{package.json}.main` is `./main`.
     var main = normalize(descriptor.main || './main');
+    // Default value for `{package.json}.lib is `lib`.
     var lib = descriptor.lib || 'lib';
     return path.join(descriptor.linker.path, lib, main);
   }, matches);
 };
 
-search.packaged = function(requirement, packages) {
+search.packaged = function(requirement, descriptors) {
   /**
   Treats `requirement` as `my-package/path/to/module` form and
-  returns paths for the `path/to/module` modules in the given
-  packages that have `my-package` name.
+  returns paths for the `path/to/module` modules in the packages that have
+  `my-package` name.
   **/
 
   var name = extractPackageName(requirement);
   var location = extractModulePath(requirement);
 
   // Filter out packages that have a matching names.
-  var matches = filter(is(field('name'), name), packages);
+  var matches = filter(is(field('name'), name), descriptors);
   return search.from(location, matches);
 };
 
-search.core = function(requirement, packages) {
+search.core = function(requirement, descriptors) {
   /**
   Searches for `requirement` module `paths` only in the core SDK packages
   (addon-kit, api-utils) from the given packages.
   **/
   var name = field('name');
   var isCore = or(is(name, 'addon-kit'), is(name, 'api-utils'));
-  var matches = filter(isCore, packages);
+  var matches = filter(isCore, descriptors);
   return search.from(requirement, matches);
 };
 
-search.own = function(requirement, packages, options) {
+search.own = function(requirement, descriptors, options) {
   /**
   Treats given `requirement` as a relative one and looks for matching
-  module paths with in the package itself.
+  module paths with in the package itself. `options.root` is path of the
+  package from which require was initiated, this the package that will be used.
   **/
-  var matches = filter(is(query('linker.path'), options.root), packages);
+  var matches = filter(is(query('linker.path'), options.root), descriptors);
   return search.from(requirement, matches);
 };
 
@@ -221,8 +238,13 @@ search.dependency = function(requirement, packages) {
   return search.from(requirement, sorted);
 };
 
-function mark(type, actual, expected) {
+
+function mark(type) {
+  // Utility function that helps to map module path to nodes containing more
+  // metadata.
   return function marker(requirement) {
+    // Marker is just an utility to carry `requirement` information since
+    // same requirement will be searched in many locations.
     return function(location) {
       return {
         type: 'deprecated',
@@ -233,8 +255,14 @@ function mark(type, actual, expected) {
     };
   };
 }
+
+// Create markers per each type of search branch in order to include
+// information about which search logic was successful. This would allow
+// us to generate much better suggestions how users can migrate to a new
+// pattern.
 mark.packaged = mark('packaged');
 mark.main = mark('main');
 mark.core = mark('core');
 mark.own = mark('own');
 mark.dependency = mark('dependency');
+

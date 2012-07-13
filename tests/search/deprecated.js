@@ -7,16 +7,13 @@
 
 'use strict';
 
-var deprecated = require('../search'),
+var deprecated = require('../../search/deprecated'),
     search = deprecated.search, descriptors = deprecated.descriptors;
-var fixtures = require('./fixtures');
+var fixtures = require('../fixtures');
 var streamer = require('streamer/core'),
     map = streamer.map;
-var env = require('environment').env;
 
-var stringify = JSON.stringify
-
-exports.Assert = require('./assert').Assert;
+exports.Assert = require('../assert').Assert;
 
 function packages() {
   return descriptors([ fixtures.resolve('JETPACK_PATH', '1.8', 'packages') ]);
