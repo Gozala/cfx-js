@@ -14,20 +14,6 @@ var streamer = require('streamer/core'),
 
 exports.Assert = require('../assert').Assert;
 
-function node(path, type) {
-  return { path: path, type: type };
-}
-
-function error(requirement, searchPath, requirerPath, type) {
-  return {
-    error: 'Module required by: `' + requirerPath +
-           ' as `require("' + requirement + '")`' +
-           ' was not found at: ' + searchPath,
-    path: searchPath,
-    type: type
-  };
-}
-
 var modulesDirectory = 'node_modules';
 
 exports['test existing external dependency'] = function(expect, complete) {
