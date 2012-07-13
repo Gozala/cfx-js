@@ -7,6 +7,9 @@
 
 'use strict';
 
+function isSingleTerm(requirement) { return requirement.indexOf('/') < 0; }
+exports.isSingleTerm = isSingleTerm;
+
 function isLocal(requirement) { return requirement[0] === '.'; }
 exports.isLocal = isLocal;
 
@@ -24,3 +27,4 @@ function normalize(path) {
   return relativify(path.substr(-3) === '.js' ? path : path + '.js');
 }
 exports.normalize = normalize;
+
