@@ -49,7 +49,7 @@ function extractModulePath(requirement) {
 }
 exports.extractModulePath = extractModulePath;
 
-function search(requirement, packages, root) {
+function search(requirement, packagesPath, rootPath) {
   var named = isMultiterm(requirement) ?
     // If the requirement is a multi-term (contains a slash `/`) such
     // as `require('package/module/path')`, the loader interprets first
@@ -60,28 +60,28 @@ function search(requirement, packages, root) {
     // This will look for `JETPACK_PATH/packages/package/lib/module/path.js`.
     // If such module is discovered return stream will contain entry for it,
     // otherwise it will be empty.
-    map(mark.packaged(requirement), search.packaged(requirement, packages)) :
+    map(mark.packaged(requirement), search.packaged(requirement, packagesPath)) :
     // If requirement is a single-term (does not contain a slash `/`), linker
     // attempts to interpret it as a requirement of the entry point module from
     // the package with a given `name`. Entry point module is specified by
     // `main` property of the package.  If there is no package by that name,
     // returned stream will be empty.
-    map(mark.main(requirement), search.main(requirement, packages));
+    map(mark.main(requirement), search.main(requirement, packagesPath));
 
   // The require term (either a single-term, or multi-term) is used as the
   // subject of a search. At first search looks into SDKs core modules. If
   // module is not discovered stream will be empty.
-  var core = map(mark.core(requirement), search.core(requirement, packages));
+  var core = map(mark.core(requirement), search.core(requirement, packagesPath));
 
   // Then it searches in the add-on package itself. If module is not discovered
   // returned stream will be empty.
-  var own = map(mark.own(requirement), search.own(requirement, packages, root));
+  var own = map(mark.own(requirement), search.own(requirement, packagesPath, rootPath));
 
   // Finally it searches in all the dependency packages (if no dependencies are
   // declared all packages are treated as dependencies). If module is not
   // discovered stream will be empty.
   var dependency = map(mark.dependency(requirement),
-                       search.dependency(requirement, packages));
+                       search.dependency(requirement, packagesPath));
 
   // Concatenate all results in an order of priority. Note that each step
   // (including the following one) returns a lazy stream, there for
