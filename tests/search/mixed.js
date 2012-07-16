@@ -8,11 +8,12 @@
 'use strict';
 
 var search = require('../../search').search;
-var descriptors = require('../../search/deprecated').descriptors;
+var deprecated = require('../../search/deprecated'),
+    descriptors = deprecated.descriptors, descriptor = deprecated.descriptor;
 
 var fixtures = require('../fixtures');
 var streamer = require('streamer/core'),
-    map = streamer.map;
+    map = streamer.map, append = streamer.append;
 
 exports.Assert = require('../assert').Assert;
 
@@ -51,10 +52,10 @@ function error(requirement, searchPath, requirerPath, type) {
   };
 }
 
-function makePackageDescriptors() {
-  return descriptors([
+function makePackageDescriptors(addonPath) {
+  return append(descriptor(addonPath), descriptors([
     fixtures.resolve('JETPACK_PATH', '1.8', 'packages')
-  ]);
+  ]));
 }
 
 exports['test search local from local'] = function(expect, complete) {
@@ -155,7 +156,7 @@ exports['test search shortcut has no overlay'] = function(expect, complete) {
   expect(actual).to.be(makeNode('sdk/tabs', modulePath, 'std')).then(complete);
 };
 
-exports['test search deprecated relative'] = function(expect, complete) {
+exports['test search deprecated local'] = function(expect, complete) {
   var requirerPath = fixtures.resolve('a', 'main.js');
   var requirerType = 'local';
   var findPath = fixtures.resolve('a', 'utils.js');
@@ -164,11 +165,11 @@ exports['test search deprecated relative'] = function(expect, complete) {
   var actual = search(searchTerm, requirerPath, requirerType, {
     rootPath: fixtures.resolve('a'),
     jetpackPath: fixtures.resolve('JETPACK_PATH', '1.8'),
-    packageDescriptors: makePackageDescriptors(),
+    packageDescriptors: makePackageDescriptors(fixtures.resolve('a')),
     backwardsCompatible: true
   });
 
-  expect(actual).to.be(makeNode('a/utils', findPath, 'deprecated')).then(complete);
+  expect(actual).to.be(makeDep('utils', findPath, 'own')).then(complete);
 };
 
 exports['test search deprecated core'] = function(expect, complete) {
@@ -181,7 +182,7 @@ exports['test search deprecated core'] = function(expect, complete) {
   var actual = search(searchTerm, requirerPath, requirerType, {
     rootPath: fixtures.resolve('a'),
     jetpackPath: fixtures.resolve('JETPACK_PATH', '1.8'),
-    packageDescriptors: makePackageDescriptors(),
+    packageDescriptors: makePackageDescriptors(fixtures.resolve('a')),
     backwardsCompatible: true
   });
 
@@ -198,7 +199,7 @@ exports['test search deprecated packaged'] = function(expect, complete) {
   var actual = search(searchTerm, requirerPath, requirerType, {
     rootPath: fixtures.resolve('a'),
     jetpackPath: fixtures.resolve('JETPACK_PATH', '1.8'),
-    packageDescriptors: makePackageDescriptors(),
+    packageDescriptors: makePackageDescriptors(fixtures.resolve('a')),
     backwardsCompatible: true
   });
 
@@ -215,7 +216,7 @@ exports['test search deprecated main (relative)'] = function(expect, complete) {
   var actual = search(searchTerm, requirerPath, requirerType, {
     rootPath: fixtures.resolve('a'),
     jetpackPath: fixtures.resolve('JETPACK_PATH', '1.8'),
-    packageDescriptors: makePackageDescriptors(),
+    packageDescriptors: makePackageDescriptors(fixtures.resolve('a')),
     backwardsCompatible: true
   });
 
@@ -233,7 +234,7 @@ exports['test search deprecated main (absolute)'] = function(expect, complete) {
   var actual = search(searchTerm, requirerPath, requirerType, {
     rootPath: fixtures.resolve('a'),
     jetpackPath: fixtures.resolve('JETPACK_PATH', '1.8'),
-    packageDescriptors: makePackageDescriptors(),
+    packageDescriptors: makePackageDescriptors(fixtures.resolve('a')),
     backwardsCompatible: true
   });
 
@@ -250,7 +251,7 @@ exports['test search deprecated main (absolute)'] = function(expect, complete) {
   var actual = search(searchTerm, requirerPath, requirerType, {
     rootPath: fixtures.resolve('a'),
     jetpackPath: fixtures.resolve('JETPACK_PATH', '1.8'),
-    packageDescriptors: makePackageDescriptors(),
+    packageDescriptors: makePackageDescriptors(fixtures.resolve('a')),
     backwardsCompatible: true
   });
 
@@ -267,12 +268,30 @@ exports['test search deprecated main (defaults)'] = function(expect, complete) {
   var actual = search(searchTerm, requirerPath, requirerType, {
     rootPath: fixtures.resolve('a'),
     jetpackPath: fixtures.resolve('JETPACK_PATH', '1.8'),
-    packageDescriptors: makePackageDescriptors(),
+    packageDescriptors: makePackageDescriptors(fixtures.resolve('a')),
     backwardsCompatible: true
   });
 
   expect(actual).to.be(makeDep('three', findPath, 'main')).then(complete);
 };
+
+exports['test search deprecated any dependency'] = function(expect, complete) {
+  var requirerPath = fixtures.resolve('a', 'main.js');
+  var requirerType = 'local';
+  var findPath = fixtures.resolve('JETPACK_PATH', '1.8', 'packages',
+                                  'seven', 'lib', 'unused.js');
+  var searchTerm = 'unused';
+
+  var actual = search(searchTerm, requirerPath, requirerType, {
+    rootPath: fixtures.resolve('a'),
+    jetpackPath: fixtures.resolve('JETPACK_PATH', '1.8'),
+    packageDescriptors: makePackageDescriptors(fixtures.resolve('a')),
+    backwardsCompatible: true
+  });
+
+  expect(actual).to.be(makeDep('unused', findPath, 'dependency')).then(complete);
+};
+
 
 if (module == require.main)
   require('test').run(exports);
