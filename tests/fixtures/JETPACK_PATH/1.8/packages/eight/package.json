@@ -1,0 +1,4 @@
+{ "name": "eight",
+  "directories": {"lib": "lib"},
+  "main": "./topfiles/main.js"
+}

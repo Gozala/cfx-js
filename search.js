@@ -33,15 +33,15 @@ function searchNonLocal(requirement, requirerPath, requirerType, options) {
   var dependenciesDirectory = options.dependenciesDirectory || 'node_modules';
   var jetpackPath = options.jetpackPath;
   var backwardsCompatible = options.backwardsCompatible;
-  var packagesPath = options.packagesPath ||
-                     path.join(jetpackPath, 'packages');
+  var packageDescriptors = options.packageDescriptors;
 
   // Append stream of in ordered of preference, this way first match will
   // be the best one.
   return append.all(
     external.search(requirement, requirerPath, rootPath, dependenciesDirectory),
     std.search(requirement, jetpackPath),
-    backwardsCompatible ? deprecated.search(requirement, packagesPath, rootPath)
+    backwardsCompatible ? deprecated.search(requirement, packageDescriptors,
+                                            rootPath)
                         : Stream.empty,
     system.search(requirement));
 }

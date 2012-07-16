@@ -11,6 +11,7 @@ exports['test search local'] = require('./search/local');
 exports['test search deprecated'] = require('./search/deprecated');
 exports['test search external'] = require('./search/external');
 exports['test search std'] = require('./search/std');
+exports['test search mixed'] = require('./search/mixed');
 
 
 if (module == require.main)

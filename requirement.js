@@ -31,7 +31,7 @@ function idify(path) {
 exports.idify = idify;
 
 function normalize(path) {
-  return relativify(path.substr(-3) === '.js' ? path : path + '.js');
+  return path.substr(-3) === '.js' ? path : path + '.js';
 }
 exports.normalize = normalize;
 

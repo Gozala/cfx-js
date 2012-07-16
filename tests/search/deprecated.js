@@ -15,7 +15,7 @@ var streamer = require('streamer/core'),
 
 exports.Assert = require('../assert').Assert;
 
-function packagesPath() {
+function packageDescriptors() {
   return descriptors([ fixtures.resolve('JETPACK_PATH', '1.8', 'packages') ]);
 }
 function addonPath(name) {
@@ -33,7 +33,7 @@ function node(type, requirement, path) {
 }
 
 exports['test search "two" from "one"'] = function(expect, complete) {
-  var actual = search('two', packagesPath(), addonPath('one'));
+  var actual = search('two', packageDescriptors(), addonPath('one'));
   expect(actual).to.be(
     node('main', 'two', ['two', 'index.js']),
     node('own', 'two', ['one', 'lib', 'two.js']),
@@ -41,7 +41,7 @@ exports['test search "two" from "one"'] = function(expect, complete) {
 };
 
 exports['test search "main" from "one"'] = function(expect, complete) {
-  var actual = search('main', packagesPath(), addonPath('one'));
+  var actual = search('main', packageDescriptors(), addonPath('one'));
   expect(actual).to.be(
     node('own', 'main', ['one', 'lib', 'main.js']),
     node('dependency', 'main', ['five', 'lib', 'main.js']),
@@ -52,20 +52,20 @@ exports['test search "main" from "one"'] = function(expect, complete) {
 };
 
 exports['test search "tree" from "one"'] = function(expect, complete) {
-  var actual = search('three', packagesPath(), addonPath('one'));
+  var actual = search('three', packageDescriptors(), addonPath('one'));
   expect(actual).to.be(
     node('main', 'three', ['three', 'lib', 'main.js'])).then(complete);
 };
 
 exports['test search "addon-kit/panel" from "one"'] = function(expect, complete) {
-  var actual = search('addon-kit/panel', packagesPath(), addonPath('one'));
+  var actual = search('addon-kit/panel', packageDescriptors(), addonPath('one'));
   expect(actual).to.be(
     node('packaged', 'addon-kit/panel', [ 'addon-kit', 'lib', 'panel.js' ])
   ).then(complete);
 };
 
 exports['test search "panel" from "one"'] = function(expect, complete) {
-  var actual = search('panel', packagesPath(), addonPath('one'));
+  var actual = search('panel', packageDescriptors(), addonPath('one'));
   expect(actual).to.be(
     node('core', 'panel', ['addon-kit', 'lib', 'panel.js' ]),
     node('dependency', 'panel', [ 'addon-kit', 'lib', 'panel.js' ])
@@ -73,7 +73,7 @@ exports['test search "panel" from "one"'] = function(expect, complete) {
 };
 
 exports['test search "promise" from "one"'] = function(expect, complete) {
-  var actual = search('promise', packagesPath(), addonPath('one'));
+  var actual = search('promise', packageDescriptors(), addonPath('one'));
   expect(actual).to.be(
     node('core', 'promise', [ 'api-utils', 'lib', 'promise.js' ]),
     node('dependency', 'promise', [ 'api-utils', 'lib', 'promise.js' ])
@@ -81,7 +81,7 @@ exports['test search "promise" from "one"'] = function(expect, complete) {
 };
 
 exports['test search "two/core" from "one"'] = function(expect, complete) {
-  var actual = search('two/core', packagesPath(), addonPath('one'));
+  var actual = search('two/core', packageDescriptors(), addonPath('one'));
   expect(actual).to.be(
     node('packaged', 'two/core', [ 'two', 'core.js' ]),
     node('own', 'two/core', [ 'one', 'lib', 'two', 'core.js' ]),
