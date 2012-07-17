@@ -292,6 +292,21 @@ exports['test search deprecated any dependency'] = function(expect, complete) {
   expect(actual).to.be(makeDep('unused', findPath, 'dependency')).then(complete);
 };
 
+exports['test search defaults to system'] = function(expect, complete) {
+  var requirerPath = fixtures.resolve('a', 'main.js');
+  var requirerType = 'local';
+  var searchTerm = 'not-found';
+
+  var actual = search(searchTerm, requirerPath, requirerType, {
+    rootPath: fixtures.resolve('a'),
+    jetpackPath: fixtures.resolve('JETPACK_PATH', '1.8'),
+    packageDescriptors: makePackageDescriptors(fixtures.resolve('a')),
+    backwardsCompatible: true
+  });
+
+  expect(actual).to.be(makeNode('not-found', 'not-found.js', 'system')).then(complete);
+};
+
 
 if (module == require.main)
   require('test').run(exports);
