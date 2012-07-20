@@ -72,7 +72,8 @@ function graph(node, visited, options) {
   var requirerType = node.type;
 
   var requirements = requirerType === 'system' ? Stream.empty :
-                                                 read(requirerPath);
+                     node.error ? Stream.empty :
+                     read(requirerPath);
 
   // Expand each requirement of the given module to a node containing
   // information about it's location & type.
