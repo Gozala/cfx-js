@@ -19,6 +19,11 @@ var reactive = require('./reactive'),
     join = reactive.join;
 var requirement = require('./requirement'),
     identify = requirement.identify;
+var graphUtils = require('./graph'),
+    idify = graphUtils.idify, stripRequirement = graphUtils.stripRequirement,
+    addRequirements = graphUtils.addRequirements,
+    serialize = graphUtils.serialize;
+
 
 
 
@@ -50,14 +55,14 @@ function link(mainPath, addonPath, jetpackPath, options) {
     id: identify(modulePath, 'local', addonPath, jetpackPath)
   };
 
-  return graph(module, [], {
+  return serialize(graph(module, [], {
     rootPath: addonPath,
     jetpackPath: jetpackPath,
     dependenciesDirectory: dependenciesDirectory,
     backwardsCompatible: backwardsCompatible,
     packagesPaths: packagesPaths,
     packageDescriptors: packageDescriptors
-  });
+  }));
 }
 exports.link = link;
 
@@ -91,36 +96,4 @@ function graph(node, visited, options) {
   }, newDependencies);
 
   return append(requirer, subGraph);
-}
-
-function idify(nodes, options) {
-  /**
-  Adds node unique identifier to the given nodes.
-  **/
-  return map(function(node) {
-    return join(node, {
-      id: identify(node.path, node.type,
-                   options.rootPath, options.jetpackPath)
-    });
-  }, nodes);
-}
-
-function stripRequirement(nodes) {
-  /**
-  Strips out temporary requirement field from module nodes.
-  **/
-  return map(function(node) {
-    return join(node, { requirement: undefined });
-  }, nodes);
-}
-
-function addRequirements(node, dependencies) {
-  /**
-  Utility function that adds requirements mapping to the given module
-  node.
-  **/
-  return reduce(function(node, dependency) {
-    node.requirements[dependency.requirement] = dependency.id;
-    return node;
-  }, dependencies, join(node, { requirements: {} }));
 }
