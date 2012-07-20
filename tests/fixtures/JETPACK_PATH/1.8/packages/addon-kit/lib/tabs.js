@@ -5,3 +5,6 @@
 /*jshint node: true globalstrict: true */
 
 'use strict';
+
+var windows = require('./windows');
+var tabs = require('api-utils/windows/tabs');
