@@ -7,6 +7,8 @@
 
 'use strict';
 
+var path = require('path');
+
 function isMultiterm(requirement) {
   /**
   Returns `true` if the requirement is a multi-term (contains a slash `/`)
@@ -25,13 +27,23 @@ function relativify(path) {
 }
 exports.relativify = relativify;
 
-function idify(path) {
+function stripExtension(path) {
   return path.substr(-3) === '.js' ? path.substr(0, path.length - 3) : path;
 }
-exports.idify = idify;
+exports.stripExtension = stripExtension;
 
 function normalize(path) {
   return path.substr(-3) === '.js' ? path : path + '.js';
 }
 exports.normalize = normalize;
 
+function identify(location, type, rootPath, jetpackPath) {
+  return stripExtension(
+    type === 'local' ? relativify(path.relative(rootPath, location)) :
+    type === 'external' ? relativify(path.relative(rootPath, location)) :
+    type === 'std' ? path.relative(path.join(rootPath, 'lib'), location) :
+    type === 'system' ? location :
+    type === 'deprecated' ? location :
+    null);
+}
+exports.identify = identify;
