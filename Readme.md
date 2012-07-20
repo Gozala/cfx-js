@@ -18,19 +18,17 @@ npm install
 
 Once you install package you can use [nodejs] to test functionality
 that is already implemented by running appropriate commands from
-a project folder:
+an addon folder:
 
-1. Extraction of requirements
 
-    ```sh
-    npm run demo-extract
-    ```
+```sh
+cd tests/fixtures/a
+# backwards compatible mode
+node ../../../bin/cfx.js ./main.js ../JETPACK_PATH/1.8/ --compatible
 
-2. Extraction and analyzes of requirements
-
-   ```sh
-   npm run demo-analyze
-   ```
+# backwards incompatible mode
+node ../../../bin/cfx.js ./main.js ../JETPACK_PATH/2.0
+```
 
 [JEP Linker]:https://github.com/mozilla/addon-sdk/wiki/JEP-Linker
 [nodejs]:http://nodejs.org/
