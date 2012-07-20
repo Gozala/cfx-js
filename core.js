@@ -46,7 +46,6 @@ function link(mainPath, addonPath, jetpackPath, options) {
   var modulePath = path.join(addonPath, mainPath);
   var module = {
     type: 'local',
-    requirement: mainPath,
     path: modulePath,
     id: identify(modulePath, 'local', addonPath, jetpackPath)
   };
@@ -72,24 +71,19 @@ function graph(node, visited, options) {
 
   // Expand each requirement of the given module to a node containing
   // information about it's location & type.
-  var dependencies = expand(function(requirement) {
+  var requirementNodes = expand(function(requirement) {
     return search(requirement, requirerPath, requirerType, options);
   }, requirements);
 
   // This step add's `id` property with unique value identifying
   // module.
-  var identified = map(function(module) {
-    return join(module, {
-      id: identify(module.path, module.type,
-                   options.rootPath, options.jetpackPath)
-    });
-  }, dependencies);
-
+  var identified = idify(requirementNodes, options);
   var requirer = addRequirements(node, identified);
+  var dependencies = stripRequirement(identified);
   // Filter out dependencies that have not being visited yet.
   var newDependencies = filter(function(dependency) {
     return visited.indexOf(dependency.id) < 0;
-  }, identified);
+  }, dependencies);
 
   // Expand new dependencies to their sub graphs.
   var subGraph = expand(function(dependency) {
@@ -99,14 +93,34 @@ function graph(node, visited, options) {
   return append(requirer, subGraph);
 }
 
+function idify(nodes, options) {
+  /**
+  Adds node unique identifier to the given nodes.
+  **/
+  return map(function(node) {
+    return join(node, {
+      id: identify(node.path, node.type,
+                   options.rootPath, options.jetpackPath)
+    });
+  }, nodes);
+}
 
-function addRequirements(module, dependencies) {
+function stripRequirement(nodes) {
+  /**
+  Strips out temporary requirement field from module nodes.
+  **/
+  return map(function(node) {
+    return join(node, { requirement: undefined });
+  }, nodes);
+}
+
+function addRequirements(node, dependencies) {
   /**
   Utility function that adds requirements mapping to the given module
   node.
   **/
-  return reduce(function(module, dependency) {
-    module.requirements[dependency.requirement] = dependency.id;
-    return module;
-  }, dependencies, join(module, { requirements: {} }));
+  return reduce(function(node, dependency) {
+    node.requirements[dependency.requirement] = dependency.id;
+    return node;
+  }, dependencies, join(node, { requirements: {} }));
 }
