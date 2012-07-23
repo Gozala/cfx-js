@@ -9,9 +9,15 @@ described in [JEP Linker].
 ## Install
 
 ```sh
-git clone --recursive https://github.com/Gozala/cfx-js.git
+git clone https://github.com/Gozala/cfx-js.git
 cd cfx-js
 npm install
+```
+
+## Test
+
+```sh
+npm test
 ```
 
 ## Usage
