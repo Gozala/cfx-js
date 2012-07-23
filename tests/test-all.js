@@ -2,10 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+/*jshint node: true globalstrict: true */
 
 'use strict';
 
-exports['test extraction'] = require('./extraction');
+exports['test search'] = require('./search');
 
-if (module == require.main)
-  require("test").run(exports);
+require('test').run(exports);
