@@ -19,7 +19,8 @@
   },
   "scripts": {
     "test": "node --harmony_weakmaps tests/test-all.js",
-    "repl": "node --harmony_weakmaps node_modules/repl-utils"
+    "repl": "node --harmony_weakmaps node_modules/repl-utils",
+    "install": "git submodule update --init --recursive"
   },
   "licenses": [{
     "type" : "MPL2",
