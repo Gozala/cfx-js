@@ -176,8 +176,8 @@ exports['test search deprecated core'] = function(expect, complete) {
   var requirerPath = fixtures.resolve('a', 'main.js');
   var requirerType = 'local';
   var findPath = fixtures.resolve('JETPACK_PATH', '1.8', 'packages',
-                                  'addon-kit', 'lib', 'panel.js');
-  var searchTerm = 'panel';
+                                  'addon-kit', 'lib', 'tabs.js');
+  var searchTerm = 'tabs';
 
   var actual = search(searchTerm, requirerPath, requirerType, {
     rootPath: fixtures.resolve('a'),
@@ -186,7 +186,7 @@ exports['test search deprecated core'] = function(expect, complete) {
     backwardsCompatible: true
   });
 
-  expect(actual).to.be(makeDep('panel', findPath, 'core')).then(complete);
+  expect(actual).to.be(makeDep('tabs', findPath, 'core')).then(complete);
 };
 
 exports['test search deprecated packaged'] = function(expect, complete) {
