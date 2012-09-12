@@ -15,7 +15,7 @@ var fs = require('fs-streamer/fs');
 
 var parse = new function() {
   var COMMENT_PATTERN = /(\/\*[\s\S]*?\*\/)|((^|\n)[^('|"|\n)]*\/\/[^\n]*)/g;
-  var REQUIRE_PATTERN = /require\s*\(['"]([\w\W]*?)['"]\s*\)/g;
+  var REQUIRE_PATTERN = /require\s*\(['"]([\w\~\`\!\@\#\$\%\^\&\-\=\+\.\,\/\;\(\)\[\]\{\}\ ]*?)['"]\s*\)/g;
 
   return function parse(source) {
     /**
