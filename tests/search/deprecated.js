@@ -10,7 +10,7 @@
 var deprecated = require('../../search/deprecated'),
     search = deprecated.search, descriptors = deprecated.descriptors;
 var fixtures = require('../fixtures');
-var streamer = require('streamer/core'),
+var streamer = require('../../support/streamer/core'),
     map = streamer.map;
 
 exports.Assert = require('../assert').Assert;

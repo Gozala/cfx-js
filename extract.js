@@ -7,9 +7,9 @@
 
 'use strict';
 
-var streamer = require('streamer/core'),
+var streamer = require('./support/streamer/core'),
     Stream = streamer.Stream, map = streamer.map, expand = streamer.expand;
-var fs = require('fs-streamer/fs');
+var fs = require('./support/fs-streamer/fs');
 
 
 

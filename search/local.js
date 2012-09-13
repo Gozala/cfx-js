@@ -10,7 +10,7 @@
 var path = require('path');
 var normalize = require('../requirement').normalize;
 var existing = require('../io').existing;
-var streamer = require('streamer/core'),
+var streamer = require('../support/streamer/core'),
     Stream = streamer.Stream, append = streamer.append, map = streamer.map;
 
 function foundNode(requirement, type, path) {

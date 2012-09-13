@@ -9,7 +9,7 @@
 
 var search = require('../../search/std').search;
 var fixtures = require('../fixtures');
-var streamer = require('streamer/core'),
+var streamer = require('../../support/streamer/core'),
     map = streamer.map;
 
 exports.Assert = require('../assert').Assert;

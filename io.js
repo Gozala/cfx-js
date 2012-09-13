@@ -7,11 +7,11 @@
 
 'use strict';
 
-var streamer = require('streamer/core'),
+var streamer = require('./support/streamer/core'),
     Stream = streamer.Stream, capture = streamer.capture,
     expand = streamer.expand, zip = streamer.zip, filter = streamer.filter,
     map = streamer.map;
-var fs = require('fs-streamer/fs');
+var fs = require('./support/fs-streamer/fs');
 var reactive = require('./reactive'),
     field = reactive.field;
 var stream = require('./stream'),

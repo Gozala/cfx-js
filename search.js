@@ -14,9 +14,9 @@ var external = require('./search/external');
 var std = require('./search/std');
 var deprecated = require('./search/deprecated');
 var system = require('./search/system');
-var streamer = require('streamer/core'),
+var streamer = require('./support/streamer/core'),
     Stream = streamer.Stream, append = streamer.append, take = streamer.take;
-var path = require('path');
+var path = require('./support/path');
 
 
 function search(requirement, requirerPath, requirerType, options) {

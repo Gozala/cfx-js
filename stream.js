@@ -7,7 +7,7 @@
 
 'use strict';
 
-var streamer = require('streamer/core'),
+var streamer = require('./support/streamer/core'),
     Stream = streamer.Stream, map = streamer.map, filter = streamer.filter,
     expand = streamer.expand, zip = streamer.zip, capture = streamer.capture,
     mix = streamer.mix, append = streamer.append, take = streamer.take,

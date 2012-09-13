@@ -7,7 +7,7 @@
 
 'use strict';
 
-var streamer = require('streamer/core'),
+var streamer = require('./support/streamer/core'),
     Stream = streamer.Stream, map = streamer.map, filter = streamer.filter,
     expand = streamer.expand, zip = streamer.zip, capture = streamer.capture,
     mix = streamer.mix, append = streamer.append, take = streamer.take,
@@ -19,8 +19,8 @@ var reactive = require('./reactive'),
 var requirement = require('./requirement'),
     isLocal = requirement.isLocal, normalize = requirement.normalize,
     idify = requirement.idify, relativify = requirement.relativify;
-var fs = require('fs-streamer/fs');
-var path = require('path');
+var fs = require('./support/fs-streamer/fs');
+var path = require('./support/path');
 var env = require('environment').env;
 
 
