@@ -1,6 +1,0 @@
-[submodule "@modules/streamer"]
-	path = @modules/streamer
-	url = https://github.com/Gozala/streamer.git
-[submodule "@modules/fs-streamer"]
-	path = @modules/fs-streamer
-	url = https://github.com/Gozala/fs-streamer.git
