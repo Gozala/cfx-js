@@ -7,12 +7,12 @@
 
 'use strict';
 
-var streamer = require('streamer/core'),
+var streamer = require('../support/streamer/core'),
     Stream = streamer.Stream, map = streamer.map;
 var requirement = require('../requirement'),
     normalize = requirement.normalize, isMultiterm = requirement.isMultiterm;
 var existing = require('../io').existing;
-var path = require('path');
+var path = require('../support/path');
 
 function search(requirement, jetpackPath) {
   /**

@@ -7,11 +7,11 @@
 
 'use strict';
 
-var streamer = require('streamer/core'),
+var streamer = require('../support/streamer/core'),
     Stream = streamer.Stream, map = streamer.map;
 var normalize = require('../requirement').normalize;
 var existing = require('../io').existing;
-var path = require('path');
+var path = require('../support/path');
 
 function search(requirement, requirerPath, rootPath, dependenciesDirectory) {
   var basePath = path.dirname(requirerPath);

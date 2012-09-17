@@ -6,7 +6,7 @@
 
 'use strict';
 
-var streamer = require('streamer/core');
+var streamer = require('../support/streamer/core');
 var link = require('../core').link;
 
 var unbind = Function.call.bind(Function.bind, Function.call);

@@ -7,7 +7,7 @@
 
 'use strict';
 
-var Stream = require('streamer/core').Stream;
+var Stream = require('../support/streamer/core').Stream;
 var normalize = require('../requirement').normalize;
 
 function search(requirement) {

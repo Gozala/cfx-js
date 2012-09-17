@@ -9,7 +9,7 @@
 
 var fs = require('fs')
 var binding = process.binding('fs')
-var streamer = require('streamer/core'), Stream = streamer.Stream
+var streamer = require('../streamer/core'), Stream = streamer.Stream
 
 var call = Function.prototype.call
 // Convenience shortcut for Array.prototype.slice.call(args, n)

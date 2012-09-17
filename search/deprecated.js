@@ -21,7 +21,7 @@ var requirement = require('../requirement'),
 var stream = require('../stream'),
     select = stream.select, sort = stream.sort;
 
-var streamer = require('streamer/core'),
+var streamer = require('../support/streamer/core'),
     Stream = streamer.Stream, map = streamer.map, filter = streamer.filter,
     expand = streamer.expand, zip = streamer.zip, capture = streamer.capture,
     mix = streamer.mix, append = streamer.append, take = streamer.take,
@@ -30,8 +30,8 @@ var streamer = require('streamer/core'),
 var io = require('../io'),
     existing = io.existing;
 
-var fs = require('fs-streamer/fs');
-var path = require('path');
+var fs = require('../support/fs-streamer/fs');
+var path = require('../support/path');
 
 function extractPackageName(requirement) {
   /**
