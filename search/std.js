@@ -12,7 +12,7 @@ var streamer = require('../support/streamer/core'),
 var requirement = require('../requirement'),
     normalize = requirement.normalize, isMultiterm = requirement.isMultiterm;
 var existing = require('../io').existing;
-var path = require('../support/path');
+var path = require('path');
 
 function search(requirement, jetpackPath) {
   /**

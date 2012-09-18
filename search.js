@@ -16,7 +16,6 @@ var deprecated = require('./search/deprecated');
 var system = require('./search/system');
 var streamer = require('./support/streamer/core'),
     Stream = streamer.Stream, append = streamer.append, take = streamer.take;
-var path = require('./support/path');
 
 
 function search(requirement, requirerPath, requirerType, options) {

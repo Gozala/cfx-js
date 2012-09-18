@@ -7,7 +7,7 @@
 
 'use strict';
 
-var path = require('./support/path');
+var path = require('path');
 
 function isMultiterm(requirement) {
   /**

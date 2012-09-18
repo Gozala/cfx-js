@@ -11,7 +11,7 @@ var streamer = require('../support/streamer/core'),
     Stream = streamer.Stream, map = streamer.map;
 var normalize = require('../requirement').normalize;
 var existing = require('../io').existing;
-var path = require('../support/path');
+var path = require('path');
 
 function search(requirement, requirerPath, rootPath, dependenciesDirectory) {
   var basePath = path.dirname(requirerPath);

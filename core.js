@@ -6,7 +6,7 @@
 
 'use strict';
 
-var path = require('./support/path');
+var path = require('path');
 var streamer = require('./support/streamer/core'),
     Stream = streamer.Stream, append = streamer.append, expand = streamer.expand,
     map = streamer.map, filter = streamer.filter, reduce = streamer.reduce;

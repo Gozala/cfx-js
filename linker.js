@@ -20,7 +20,7 @@ var requirement = require('./requirement'),
     isLocal = requirement.isLocal, normalize = requirement.normalize,
     idify = requirement.idify, relativify = requirement.relativify;
 var fs = require('./support/fs-streamer/fs');
-var path = require('./support/path');
+var path = require('path');
 var env = require('system').env;
 
 

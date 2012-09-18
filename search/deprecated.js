@@ -31,7 +31,7 @@ var io = require('../io'),
     existing = io.existing;
 
 var fs = require('../support/fs-streamer/fs');
-var path = require('../support/path');
+var path = require('path');
 
 function extractPackageName(requirement) {
   /**

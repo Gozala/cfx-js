@@ -7,7 +7,7 @@
 
 'use strict';
 
-var path = require('../support/path');
+var path = require('path');
 var normalize = require('../requirement').normalize;
 var existing = require('../io').existing;
 var streamer = require('../support/streamer/core'),
