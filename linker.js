@@ -21,7 +21,7 @@ var requirement = require('./requirement'),
     idify = requirement.idify, relativify = requirement.relativify;
 var fs = require('./support/fs-streamer/fs');
 var path = require('./support/path');
-var env = require('environment').env;
+var env = require('system').env;
 
 
 
