@@ -14,6 +14,12 @@ cd cfx-js
 npm link
 ```
 
+## Test
+
+```sh
+npm test
+```
+
 ## Usage
 
 Once you install package you can use [nodejs] to test functionality
