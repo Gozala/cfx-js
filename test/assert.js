@@ -10,6 +10,7 @@
 'use strict';
 
 var BaseAssert = require('test').Assert;
+var setTimeout = require('timers').setTimeout;
 
 function runAsserts(assert, assertions) {
   if (!assertions.length) return

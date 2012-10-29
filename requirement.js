@@ -10,10 +10,8 @@
 var path = require('path');
 
 function isMultiterm(requirement) {
-  /**
-  Returns `true` if the requirement is a multi-term (contains a slash `/`)
-  such as `require('package/module/path')`. Otherwise return false.
-  **/
+  // Returns `true` if the requirement is a multi-term (contains a slash `/`)
+  // such as `require('package/module/path')`. Otherwise return false.
 
   return requirement.indexOf('/') >= 0;
 }

@@ -1,14 +1,11 @@
 /* vim:set ts=2 sw=2 sts=2 expandtab */
 /*jshint asi: true undef: true es5: true node: true devel: true
-         forin: false latedef: false */
+         forin: false latedef: false globalstrict: true*/
 /*global define: true */
-
-!(typeof(define) !== "function" ? function($){ $(typeof(require) !== 'function' ? (function() { throw Error('require unsupported'); }) : require, typeof(exports) === 'undefined' ? this : exports); } : define)(function(require, exports) {
 
 'use strict';
 
 var fs = require('fs')
-var binding = process.binding('fs')
 var streamer = require('../streamer/core'), Stream = streamer.Stream
 
 var call = Function.prototype.call
@@ -67,7 +64,7 @@ function decoder(encoding) {
 exports.stat = stat
 function stat(path) {
   return ((streamer.run)
-    (node.future.lazy, binding.stat, path)
+    (node.future.lazy, fs.stat, path)
     (node.apply, function onstat(stats) {
       return Stream(Object.create(stats, {
         path: { value: path, enumerable: true }
@@ -78,13 +75,13 @@ function stat(path) {
 exports.list = list
 function list(path) {
   return ((streamer.run)
-    (node.future.lazy, binding.readdir, path)
+    (node.future.lazy, fs.readdir, path)
     (node.apply, Stream.from))
 }
 
 function remove(path) {
   return ((streamer.run)
-    (node.future.lazy, binding.unlink, path)
+    (node.future.lazy, fs.unlink, path)
     (node.apply, Stream.of))
 }
 exports.remove = remove
@@ -92,14 +89,14 @@ exports.remove = remove
 function makeDirectory(path, options) {
   var mode = options && options.mode || parseInt('0777', 8)
   return ((streamer.run)
-    (node.future.lazy, binding.mkdir, path, mode)
+    (node.future.lazy, fs.mkdir, path, mode)
     (node.apply, Stream.of))
 }
 exports.makeDirectory = makeDirectory
 
 function removeDirectory(path) {
   return ((streamer.run)
-    (node.future.lazy, binding.rmdir, path)
+    (node.future.lazy, fs.rmdir, path)
     (node.apply, Stream.of))
 }
 exports.removeDirectory = removeDirectory
@@ -127,7 +124,7 @@ function close(file) {
   return ((via.file)
     (file, function(fd) {
       return ((streamer.run)
-        (node.future.lazy, binding.close, fd)
+        (node.future.lazy, fs.close, fd)
         (node.apply, Stream.of))
     }))
 }
@@ -163,7 +160,7 @@ function reader(fd, options) {
   var buffer = Buffer(size)
 
   return ((streamer.run)
-    (node.future.lazy, binding.read, fd, buffer, 0, size, start)
+    (node.future.lazy, fs.read, fd, buffer, 0, size, start)
     (node.apply, function(count) {
       return count && Stream(buffer.slice(0, count), reader(fd, {
         size: size,
@@ -205,7 +202,7 @@ function writter(fd, content, options) {
     if (!data.length) return writter(fd, stream.tail, options)
 
     var deferred = streamer.defer()
-    binding.write(fd, data, 0, data.length, start, function wrote(error, count) {
+    fs.write(fd, data, 0, data.length, start, function wrote(error, count) {
       if (error) return deferred.reject(error)
       deferred.resolve(Stream(count, writter(fd, stream.tail, {
         start: start + count,
@@ -244,5 +241,3 @@ function write(path, source, options) {
 
   return result
 }
-
-});

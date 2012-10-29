@@ -4,8 +4,12 @@
  */
 /*jshint node: true globalstrict: true */
 
-'use strict';
+"use strict";
 
-exports['test search'] = require('./search');
+exports["test search local"] = require("./search-tests/local");
+exports["test search deprecated"] = require("./search-tests/deprecated");
+exports["test search external"] = require("./search-tests/external");
+exports["test search std"] = require("./search-tests/std");
+exports["test search mixed"] = require("./search-tests/mixed");
 
-require('test').run(exports);
+require("test").run(exports);

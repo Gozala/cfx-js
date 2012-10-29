@@ -3,5 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-var path = require('path');
-exports.resolve = path.resolve.bind(0, module.filename, '../fixtures/');
+var path = require("path");
+var env = require("sdk/system/environment").env;
+var resolve = module.filename ? // node
+                path.resolve.bind(path, module.filename, "..", "fixtures") :
+                path.resolve.bind(path, env.CUDDLEFISH_ROOT, "cfx", "test", "fixtures");
+
+exports.resolve = resolve

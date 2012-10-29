@@ -13,9 +13,6 @@
   "bugs": {
     "url": "http://github.com/Gozala/cfx-js/issues/"
   },
-  "dependencies": {
-    "system": "0.1.0"
-  },
   "devDependencies": {
     "test": ">=0.4.4"
   },
