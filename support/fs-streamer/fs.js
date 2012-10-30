@@ -6,6 +6,7 @@
 'use strict';
 
 var fs = require('fs')
+var Buffer = require('buffer').Buffer
 var streamer = require('../streamer/core'), Stream = streamer.Stream
 
 var call = Function.prototype.call
